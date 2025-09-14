@@ -1,403 +1,425 @@
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Medal, Crown, Target, Flame, Star, Users, Globe, School, Calendar, Filter, Zap, Award } from "lucide-react";
-import { useQuizHistory, useUserProfile } from "@/hooks/use-app-storage";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Trophy, Medal, Crown, Target, Zap, Calendar, Filter, Users } from 'lucide-react';
+import { useUserProfile } from '../hooks/use-app-storage';
 
-interface LeaderboardUser {
+interface LeaderboardEntry {
   id: string;
   name: string;
   class: string;
   school: string;
   totalPoints: number;
-  averageScore: number;
-  quizCount: number;
+  accuracy: number;
   streak: number;
   badges: number;
   rank: number;
-  region?: string;
+  change: number; // rank change from last period
 }
 
-interface Challenge {
-  id: string;
-  fromUser: string;
-  toUser: string;
+interface LeaderboardFilters {
   subject: string;
-  status: 'pending' | 'accepted' | 'completed';
-  createdAt: string;
+  timeframe: 'weekly' | 'monthly' | 'all-time';
+  scope: 'global' | 'school' | 'class';
+}
+
+const subjects = [
+  'All Subjects', 'Mathematics', 'Physics', 'Chemistry', 'Biology',
+  'Computer Science', 'English', 'History', 'Geography'
+];
+
+// Mock leaderboard data
+const mockLeaderboard: LeaderboardEntry[] = [
+  {
+    id: '1',
+    name: 'Priya Sharma',
+    class: 'Class 10',
+    school: 'Delhi Public School',
+    totalPoints: 2850,
+    accuracy: 94,
+    streak: 15,
+    badges: 12,
+    rank: 1,
+    change: 0
+  },
+  {
+    id: '2',
+    name: 'Arjun Patel',
+    class: 'Class 10',
+    school: 'Kendriya Vidyalaya',
+    totalPoints: 2720,
+    accuracy: 91,
+    streak: 8,
+    badges: 10,
+    rank: 2,
+    change: 1
+  },
+  {
+    id: '3',
+    name: 'Sneha Gupta',
+    class: 'Class 10',
+    school: 'St. Mary\'s School',
+    totalPoints: 2680,
+    accuracy: 89,
+    streak: 12,
+    badges: 9,
+    rank: 3,
+    change: -1
+  },
+  {
+    id: 'demo-user',
+    name: 'Alex Kumar',
+    class: 'Class 10',
+    school: 'Excellence High School',
+    totalPoints: 1240,
+    accuracy: 85,
+    streak: 7,
+    badges: 5,
+    rank: 24,
+    change: 3
+  }
+];
+
+// Add more mock entries
+for (let i = 4; i <= 50; i++) {
+  if (i === 24) continue; // Skip demo-user position
+  mockLeaderboard.push({
+    id: `user-${i}`,
+    name: `Student ${i}`,
+    class: 'Class 10',
+    school: 'Various Schools',
+    totalPoints: Math.max(2650 - (i * 50) + Math.random() * 100, 500),
+    accuracy: Math.floor(Math.random() * 30 + 70),
+    streak: Math.floor(Math.random() * 20),
+    badges: Math.floor(Math.random() * 15),
+    rank: i <= 23 ? i : i + 1,
+    change: Math.floor(Math.random() * 6) - 3
+  });
 }
 
 export default function Leaderboard() {
-  const [timeFilter, setTimeFilter] = useState("all");
-  const [subjectFilter, setSubjectFilter] = useState("all");
-  const [selectedTab, setSelectedTab] = useState("global");
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
-  
+  const [activeTab, setActiveTab] = useState('global');
+  const [filters, setFilters] = useState<LeaderboardFilters>({
+    subject: 'All Subjects',
+    timeframe: 'all-time',
+    scope: 'global'
+  });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(mockLeaderboard);
   const { profile } = useUserProfile();
-  const { history, getAverageScore, getSubjectStats } = useQuizHistory();
-
-  // Generate mock leaderboard data based on current user
-  const generateLeaderboardData = (): LeaderboardUser[] => {
-    const currentUser: LeaderboardUser = {
-      id: profile.id,
-      name: profile.name,
-      class: profile.class,
-      school: profile.school,
-      totalPoints: profile.totalPoints,
-      averageScore: getAverageScore(),
-      quizCount: history.length,
-      streak: profile.currentStreak,
-      badges: 3, // Mock badge count
-      rank: Math.max(1, Math.floor(Math.random() * 50) + 1),
-      region: "Your Region",
-    };
-
-    // Generate mock users around current user's rank
-    const mockUsers: LeaderboardUser[] = [];
-    for (let i = 1; i <= 100; i++) {
-      if (i === currentUser.rank) {
-        mockUsers.push(currentUser);
-        continue;
-      }
-
-      const mockUser: LeaderboardUser = {
-        id: `user_${i}`,
-        name: `Student ${i}`,
-        class: ["Class 10", "Class 11", "Class 12"][Math.floor(Math.random() * 3)],
-        school: `School ${Math.floor(Math.random() * 20) + 1}`,
-        totalPoints: Math.max(0, currentUser.totalPoints + (currentUser.rank - i) * 50 + Math.floor(Math.random() * 100)),
-        averageScore: Math.min(100, Math.max(60, currentUser.averageScore + Math.floor(Math.random() * 20) - 10)),
-        quizCount: Math.max(1, currentUser.quizCount + Math.floor(Math.random() * 10) - 5),
-        streak: Math.max(0, currentUser.streak + Math.floor(Math.random() * 5) - 2),
-        badges: Math.floor(Math.random() * 8),
-        rank: i,
-        region: ["North", "South", "East", "West", "Central"][Math.floor(Math.random() * 5)],
-      };
-      mockUsers.push(mockUser);
-    }
-
-    return mockUsers.sort((a, b) => a.rank - b.rank);
-  };
-
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
-
-  useEffect(() => {
-    setLeaderboardData(generateLeaderboardData());
-  }, [profile, history]);
-
-  const filterData = (data: LeaderboardUser[]) => {
-    let filtered = [...data];
-
-    if (selectedTab === "class") {
-      filtered = filtered.filter(user => user.class === profile.class);
-    } else if (selectedTab === "school") {
-      filtered = filtered.filter(user => user.school === profile.school);
-    } else if (selectedTab === "regional") {
-      filtered = filtered.filter(user => user.region === "Your Region");
-    }
-
-    return filtered.slice(0, 50); // Show top 50
-  };
-
-  const getCurrentUserRank = () => {
-    const filtered = filterData(leaderboardData);
-    return filtered.findIndex(user => user.id === profile.id) + 1;
-  };
-
-  const sendChallenge = (toUserId: string) => {
-    const newChallenge: Challenge = {
-      id: `challenge_${Date.now()}`,
-      fromUser: profile.id,
-      toUser: toUserId,
-      subject: "Mathematics", // Default subject
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    setChallenges(prev => [...prev, newChallenge]);
-  };
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />;
-    if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />;
-    if (rank === 3) return <Medal className="h-5 w-5 text-amber-600" />;
-    return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>;
+    switch (rank) {
+      case 1:
+        return <Crown className="h-5 w-5 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-5 w-5 text-gray-400" />;
+      case 3:
+        return <Medal className="h-5 w-5 text-amber-600" />;
+      default:
+        return <span className="text-sm font-medium">#{rank}</span>;
+    }
   };
 
-  const getStreakColor = (streak: number) => {
-    if (streak >= 7) return "text-red-500";
-    if (streak >= 3) return "text-orange-500";
-    return "text-gray-500";
+  const getRankChangeIcon = (change: number) => {
+    if (change > 0) return <span className="text-green-600 text-xs">↑{change}</span>;
+    if (change < 0) return <span className="text-red-600 text-xs">↓{Math.abs(change)}</span>;
+    return <span className="text-gray-500 text-xs">-</span>;
   };
 
-  const filteredData = filterData(leaderboardData);
-  const currentUserRank = getCurrentUserRank();
-  const userRankData = filteredData.find(user => user.id === profile.id);
+  const getTopThree = () => leaderboard.slice(0, 3);
+  const getRestOfLeaderboard = () => leaderboard.slice(3);
+
+  const getCurrentUserEntry = () => 
+    leaderboard.find(entry => entry.id === 'demo-user');
+
+  const getNearbyUsers = () => {
+    const userEntry = getCurrentUserEntry();
+    if (!userEntry) return [];
+    
+    const userRank = userEntry.rank;
+    const startRank = Math.max(1, userRank - 2);
+    const endRank = Math.min(leaderboard.length, userRank + 2);
+    
+    return leaderboard.filter(entry => 
+      entry.rank >= startRank && entry.rank <= endRank
+    ).sort((a, b) => a.rank - b.rank);
+  };
+
+  const filterLeaderboard = (newFilters: Partial<LeaderboardFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    // In a real app, this would fetch filtered data from the API
+    // For now, we'll just randomize the order slightly to simulate filtering
+    const shuffled = [...mockLeaderboard].sort(() => Math.random() - 0.5);
+    setLeaderboard(shuffled);
+  };
+
+  const challengeUser = (userId: string) => {
+    // In a real app, this would send a challenge request
+    console.log('Challenging user:', userId);
+  };
+
+  const viewProfile = (userId: string) => {
+    // In a real app, this would navigate to user profile
+    console.log('Viewing profile:', userId);
+  };
+
+  const TopThreeDisplay = () => {
+    const topThree = getTopThree();
+    
+    return (
+      <div className="flex justify-center items-end gap-4 mb-6 p-4">
+        {/* 2nd Place */}
+        {topThree[1] && (
+          <div className="text-center">
+            <div className="relative mb-2">
+              <div className="w-16 h-20 bg-gray-200 rounded-t-lg flex items-end justify-center pb-2">
+                <span className="text-lg font-bold text-gray-600">2</span>
+              </div>
+              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-white">
+                <AvatarFallback>{topThree[1].name.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </div>
+            <h3 className="font-medium text-sm">{topThree[1].name}</h3>
+            <p className="text-xs text-muted-foreground">{topThree[1].totalPoints} pts</p>
+          </div>
+        )}
+
+        {/* 1st Place */}
+        {topThree[0] && (
+          <div className="text-center">
+            <div className="relative mb-2">
+              <div className="w-16 h-24 bg-yellow-400 rounded-t-lg flex items-end justify-center pb-2">
+                <Crown className="h-6 w-6 text-white" />
+              </div>
+              <Avatar className="w-14 h-14 mx-auto -mt-7 ring-2 ring-yellow-400">
+                <AvatarFallback>{topThree[0].name.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </div>
+            <h3 className="font-medium text-sm">{topThree[0].name}</h3>
+            <p className="text-xs text-muted-foreground">{topThree[0].totalPoints} pts</p>
+          </div>
+        )}
+
+        {/* 3rd Place */}
+        {topThree[2] && (
+          <div className="text-center">
+            <div className="relative mb-2">
+              <div className="w-16 h-16 bg-amber-600 rounded-t-lg flex items-end justify-center pb-2">
+                <span className="text-lg font-bold text-white">3</span>
+              </div>
+              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-white">
+                <AvatarFallback>{topThree[2].name.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </div>
+            <h3 className="font-medium text-sm">{topThree[2].name}</h3>
+            <p className="text-xs text-muted-foreground">{topThree[2].totalPoints} pts</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const LeaderboardEntry = ({ entry, showActions = false }: { entry: LeaderboardEntry; showActions?: boolean }) => (
+    <div className={`flex items-center justify-between p-3 rounded-lg ${
+      entry.id === 'demo-user' ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
+    }`}>
+      <div className="flex items-center gap-3">
+        <div className="w-8 flex justify-center">
+          {getRankIcon(entry.rank)}
+        </div>
+        <Avatar className="w-10 h-10">
+          <AvatarFallback>{entry.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-sm">{entry.name}</h3>
+            {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">{entry.class} • {entry.school}</p>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">{entry.totalPoints}</span>
+            <Trophy className="h-3 w-3 text-yellow-500" />
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Target className="h-3 w-3" />
+            {entry.accuracy}%
+            <Zap className="h-3 w-3 ml-1" />
+            {entry.streak}
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-center gap-1">
+          {getRankChangeIcon(entry.change)}
+          {showActions && entry.id !== 'demo-user' && (
+            <div className="flex gap-1">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-6 w-6 p-0"
+                onClick={() => viewProfile(entry.id)}
+              >
+                <Users className="h-3 w-3" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-6 w-6 p-0"
+                onClick={() => challengeUser(entry.id)}
+              >
+                <Target className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 space-y-6 pb-20">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Leaderboard</h2>
-        <p className="text-muted-foreground">Compete with students worldwide</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Leaderboard</h1>
+          <p className="text-muted-foreground">See how you rank against others</p>
+        </div>
+        <Button variant="outline" size="sm">
+          <Filter className="h-4 w-4 mr-2" />
+          Filters
+        </Button>
       </div>
 
-      {/* Current User Rank Card */}
-      {userRankData && (
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">
-                    {profile.name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-muted-foreground">Your Current Rank</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-2 justify-end mb-1">
-                  {getRankIcon(currentUserRank)}
-                  <span className="text-lg font-bold">#{currentUserRank}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{userRankData.totalPoints} points</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Filters</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Time Period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="monthly">This Month</SelectItem>
-                <SelectItem value="weekly">This Week</SelectItem>
-                <SelectItem value="daily">Today</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Subject" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Subjects</SelectItem>
-                <SelectItem value="mathematics">Mathematics</SelectItem>
-                <SelectItem value="physics">Physics</SelectItem>
-                <SelectItem value="chemistry">Chemistry</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-3 gap-2">
+        <Select value={filters.subject} onValueChange={(value) => filterLeaderboard({ subject: value })}>
+          <SelectTrigger className="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {subjects.map(subject => (
+              <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Leaderboard Tabs */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="global" className="text-xs">
-            <Globe className="h-4 w-4 mr-1" />
-            Global
-          </TabsTrigger>
-          <TabsTrigger value="regional" className="text-xs">
-            <Users className="h-4 w-4 mr-1" />
-            Regional
-          </TabsTrigger>
-          <TabsTrigger value="class" className="text-xs">
-            <School className="h-4 w-4 mr-1" />
-            Class
-          </TabsTrigger>
-          <TabsTrigger value="school" className="text-xs">
-            <Trophy className="h-4 w-4 mr-1" />
-            School
-          </TabsTrigger>
+        <Select value={filters.timeframe} onValueChange={(value: any) => filterLeaderboard({ timeframe: value })}>
+          <SelectTrigger className="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="weekly">This Week</SelectItem>
+            <SelectItem value="monthly">This Month</SelectItem>
+            <SelectItem value="all-time">All Time</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.scope} onValueChange={(value: any) => filterLeaderboard({ scope: value })}>
+          <SelectTrigger className="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="global">Global</SelectItem>
+            <SelectItem value="school">My School</SelectItem>
+            <SelectItem value="class">My Class</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="global">Global</TabsTrigger>
+          <TabsTrigger value="nearby">Nearby</TabsTrigger>
+          <TabsTrigger value="friends">Friends</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedTab} className="space-y-4">
+        <TabsContent value="global" className="space-y-4">
           {/* Top 3 Podium */}
-          {filteredData.length >= 3 && (
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-end justify-center gap-4">
-                  {/* 2nd Place */}
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-2 mx-auto">
-                      <Medal className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <div className="text-sm font-medium">{filteredData[1].name}</div>
-                    <div className="text-xs text-muted-foreground">{filteredData[1].totalPoints} pts</div>
-                  </div>
+          <Card>
+            <CardContent className="p-4">
+              <TopThreeDisplay />
+            </CardContent>
+          </Card>
 
-                  {/* 1st Place */}
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mb-2 mx-auto">
-                      <Crown className="h-10 w-10 text-yellow-500" />
-                    </div>
-                    <div className="font-bold">{filteredData[0].name}</div>
-                    <div className="text-sm text-muted-foreground">{filteredData[0].totalPoints} pts</div>
-                    <Badge className="mt-1">Champion</Badge>
-                  </div>
-
-                  {/* 3rd Place */}
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mb-2 mx-auto">
-                      <Medal className="h-8 w-8 text-amber-600" />
-                    </div>
-                    <div className="text-sm font-medium">{filteredData[2].name}</div>
-                    <div className="text-xs text-muted-foreground">{filteredData[2].totalPoints} pts</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Leaderboard List */}
+          {/* Rest of leaderboard */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Rankings</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="space-y-1">
-                {filteredData.slice(3).map((user, index) => (
-                  <div 
-                    key={user.id} 
-                    className={`flex items-center justify-between p-4 hover:bg-muted/50 transition-colors ${
-                      user.id === profile.id ? 'bg-primary/5 border-l-4 border-l-primary' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 text-center">
-                        {getRankIcon(user.rank)}
-                      </div>
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="text-sm">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-sm">{user.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {user.class} • {user.school}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{user.totalPoints}</div>
-                        <div className="text-xs text-muted-foreground">points</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{user.averageScore}%</div>
-                        <div className="text-xs text-muted-foreground">avg</div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Flame className={`h-4 w-4 ${getStreakColor(user.streak)}`} />
-                        <span className="text-sm font-medium">{user.streak}</span>
-                      </div>
-                      {user.id !== profile.id && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => sendChallenge(user.id)}
-                          className="text-xs"
-                        >
-                          <Zap className="h-3 w-3 mr-1" />
-                          Challenge
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="space-y-2">
+              {getRestOfLeaderboard().slice(0, 20).map(entry => (
+                <LeaderboardEntry key={entry.id} entry={entry} showActions={true} />
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="nearby" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Users Near Your Rank</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {getNearbyUsers().map(entry => (
+                <LeaderboardEntry key={entry.id} entry={entry} showActions={true} />
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="friends" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Friends Leaderboard</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-medium mb-2">No Friends Yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connect with classmates to see how you compare!
+              </p>
+              <Button variant="outline">Find Friends</Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Active Challenges */}
-      {challenges.length > 0 && (
+      {/* Current User Stats */}
+      {getCurrentUserEntry() && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Active Challenges
-            </CardTitle>
+            <CardTitle className="text-lg">Your Performance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {challenges.slice(0, 3).map((challenge) => (
-                <div key={challenge.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">
-                      Challenge sent to Student {challenge.toUser.slice(-1)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Subject: {challenge.subject} • {new Date(challenge.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant={challenge.status === 'pending' ? 'secondary' : 'default'}>
-                    {challenge.status}
-                  </Badge>
+            <LeaderboardEntry entry={getCurrentUserEntry()!} />
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-lg font-bold text-primary">{getCurrentUserEntry()?.badges}</div>
+                  <div className="text-xs text-muted-foreground">Badges</div>
                 </div>
-              ))}
+                <div>
+                  <div className="text-lg font-bold text-green-600">{getCurrentUserEntry()?.accuracy}%</div>
+                  <div className="text-xs text-muted-foreground">Accuracy</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-orange-600">{getCurrentUserEntry()?.streak}</div>
+                  <div className="text-xs text-muted-foreground">Streak</div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Achievement Highlights */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Star className="h-5 w-5" />
-            Recent Achievements
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <Award className="h-6 w-6 text-green-600" />
-              <div>
-                <p className="font-medium text-sm text-green-800 dark:text-green-200">
-                  Moved up 3 ranks this week!
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  Keep up the great work
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Flame className="h-6 w-6 text-orange-500" />
-              <div>
-                <p className="font-medium text-sm text-blue-800 dark:text-blue-200">
-                  {profile.currentStreak} day learning streak
-                </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
-                  Don't break the chain!
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

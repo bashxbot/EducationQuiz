@@ -1,222 +1,76 @@
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { School, Book, Zap, Calendar, History, RotateCcw, BarChart3, Atom, TestTube, Dice6, Clock, CheckCircle, XCircle, Lightbulb, ArrowLeft, ArrowRight } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useQuizHistory } from "@/hooks/use-app-storage";
-import type { Quiz, QuizQuestion } from "@shared/schema";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Progress } from '../components/ui/progress';
+import { Badge } from '../components/ui/badge';
+import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useQuizHistory, useUserProfile } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
-const classes = ["Class 10", "Class 11", "Class 12"];
-const subjects = [
-  { name: "Mathematics", icon: "BarChart3", color: "bg-blue-100 dark:bg-blue-900", iconColor: "text-blue-600 dark:text-blue-400", topics: ["Algebra", "Geometry", "Calculus"] },
-  { name: "Physics", icon: "Atom", color: "bg-green-100 dark:bg-green-900", iconColor: "text-green-600 dark:text-green-400", topics: ["Mechanics", "Thermodynamics", "Optics"] },
-  { name: "Chemistry", icon: "TestTube", color: "bg-purple-100 dark:bg-purple-900", iconColor: "text-purple-600 dark:text-purple-400", topics: ["Organic", "Inorganic", "Physical"] },
-];
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  topic: string;
+}
 
-interface QuizResult {
-  questionId: string;
-  userAnswer: string;
-  correct: boolean;
+interface QuizResults {
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
   timeSpent: number;
 }
 
+const subjects = [
+  'Mathematics', 'Physics', 'Chemistry', 'Biology',
+  'Computer Science', 'English', 'History', 'Geography'
+];
+
+const topicsBySubject: Record<string, string[]> = {
+  'Mathematics': ['Algebra', 'Geometry', 'Calculus', 'Statistics', 'Trigonometry'],
+  'Physics': ['Mechanics', 'Thermodynamics', 'Electromagnetism', 'Optics', 'Modern Physics'],
+  'Chemistry': ['Organic Chemistry', 'Inorganic Chemistry', 'Physical Chemistry', 'Biochemistry'],
+  'Biology': ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Biology'],
+  'Computer Science': ['Programming', 'Data Structures', 'Algorithms', 'Database', 'Networks'],
+  'English': ['Grammar', 'Literature', 'Vocabulary', 'Writing', 'Reading Comprehension'],
+  'History': ['Ancient History', 'Medieval History', 'Modern History', 'World Wars', 'Indian History'],
+  'Geography': ['Physical Geography', 'Human Geography', 'Economic Geography', 'Political Geography']
+};
+
 export default function Quiz() {
-  const [selectedClass, setSelectedClass] = useState("Class 10");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [quizMode, setQuizMode] = useState<'setup' | 'quiz' | 'results' | 'review'>('setup');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [selectedAnswer, setSelectedAnswer] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const [quizResults, setQuizResults] = useState<any>(null);
-  const [questionResults, setQuestionResults] = useState<QuizResult[]>([]);
-  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
-  const [timer, setTimer] = useState<number>(0);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [isReviewMode, setIsReviewMode] = useState(false);
-  const [reviewIndex, setReviewIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState('');
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [timer, setTimer] = useState(0);
+  const [quizResults, setQuizResults] = useState<QuizResults | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
 
-  const queryClient = useQueryClient();
   const { addQuizResult } = useQuizHistory();
+  const { updateProfile } = useUserProfile();
 
-  const { data: quizHistory = [] } = useQuery({
-    queryKey: ["/api/quiz/history"],
-  });
-
-  // Timer effect
   useEffect(() => {
-    if (currentQuiz && !showResults && !isReviewMode) {
-      const interval = setInterval(() => {
+    let interval: NodeJS.Timeout;
+    if (quizMode === 'quiz') {
+      interval = setInterval(() => {
         setTimer(prev => prev + 1);
       }, 1000);
-      return () => clearInterval(interval);
     }
-  }, [currentQuiz, showResults, isReviewMode]);
-
-  const generateQuizMutation = useMutation({
-    mutationFn: async (params: { class: string; subject: string; topic?: string }) => {
-      const response = await apiRequest("POST", "/api/quiz/generate", params);
-      return response.json();
-    },
-    onSuccess: (quiz) => {
-      setCurrentQuiz(quiz);
-      setCurrentQuestionIndex(0);
-      setAnswers([]);
-      setSelectedAnswer("");
-      setShowResults(false);
-      setQuestionResults([]);
-      setTimer(0);
-      setQuestionStartTime(Date.now());
-      setShowExplanation(false);
-      setIsReviewMode(false);
-    },
-  });
-
-  const submitQuizMutation = useMutation({
-    mutationFn: async ({ quizId, answers }: { quizId: string; answers: string[] }) => {
-      const response = await apiRequest("POST", `/api/quiz/${quizId}/submit`, { answers });
-      return response.json();
-    },
-    onSuccess: (results) => {
-      setQuizResults(results);
-      setShowResults(true);
-      
-      // Save to local storage
-      addQuizResult({
-        subject: selectedSubject,
-        topic: selectedTopic,
-        score: results.score,
-        totalQuestions: results.totalQuestions,
-        class: selectedClass,
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ["/api/quiz/history"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    },
-  });
-
-  const startQuiz = (subject: string, topic?: string) => {
-    setSelectedSubject(subject);
-    setSelectedTopic(topic || "");
-    generateQuizMutation.mutate({
-      class: selectedClass,
-      subject,
-      topic,
-    });
-  };
-
-  const startRandomQuiz = () => {
-    const randomSubject = subjects[Math.floor(Math.random() * subjects.length)];
-    startQuiz(randomSubject.name);
-  };
-
-  const handleAnswerSelect = (answer: string) => {
-    if (showExplanation) return; // Prevent changing answer after submission
-    setSelectedAnswer(answer);
-  };
-
-  const submitCurrentQuestion = () => {
-    if (!selectedAnswer || !currentQuiz) return;
-
-    const questions = currentQuiz.questions as QuizQuestion[];
-    const currentQuestion = questions[currentQuestionIndex];
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
-
-    // Record result
-    const result: QuizResult = {
-      questionId: currentQuestion.id,
-      userAnswer: selectedAnswer,
-      correct: isCorrect,
-      timeSpent,
-    };
-
-    setQuestionResults(prev => [...prev, result]);
-    setShowExplanation(true);
-  };
-
-  const nextQuestion = () => {
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = selectedAnswer;
-    setAnswers(newAnswers);
-    
-    if (currentQuestionIndex < (currentQuiz?.questions as QuizQuestion[]).length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer("");
-      setShowExplanation(false);
-      setQuestionStartTime(Date.now());
-    } else {
-      // Submit quiz
-      newAnswers[currentQuestionIndex] = selectedAnswer;
-      submitQuizMutation.mutate({
-        quizId: currentQuiz!.id,
-        answers: newAnswers,
-      });
-    }
-  };
-
-  const prevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedAnswer(answers[currentQuestionIndex - 1] || "");
-      setShowExplanation(false);
-      setQuestionStartTime(Date.now());
-    }
-  };
-
-  const startReview = () => {
-    setIsReviewMode(true);
-    setReviewIndex(0);
-  };
-
-  const retryWrongOnly = () => {
-    // Filter wrong questions and create new quiz
-    const questions = currentQuiz?.questions as QuizQuestion[];
-    const wrongQuestions = questions.filter((_, index) => 
-      !questionResults[index]?.correct
-    );
-    
-    if (wrongQuestions.length > 0) {
-      const newQuiz = {
-        ...currentQuiz!,
-        questions: wrongQuestions,
-        id: `retry_${Date.now()}`,
-      };
-      setCurrentQuiz(newQuiz);
-      setCurrentQuestionIndex(0);
-      setAnswers([]);
-      setSelectedAnswer("");
-      setShowResults(false);
-      setQuestionResults([]);
-      setTimer(0);
-      setQuestionStartTime(Date.now());
-      setShowExplanation(false);
-      setIsReviewMode(false);
-    }
-  };
-
-  const resetQuiz = () => {
-    setCurrentQuiz(null);
-    setCurrentQuestionIndex(0);
-    setAnswers([]);
-    setSelectedAnswer("");
-    setShowResults(false);
-    setQuizResults(null);
-    setQuestionResults([]);
-    setSelectedSubject("");
-    setSelectedTopic("");
-    setTimer(0);
-    setShowExplanation(false);
-    setIsReviewMode(false);
-  };
+    return () => clearInterval(interval);
+  }, [quizMode]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -224,131 +78,256 @@ export default function Quiz() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Review Mode
-  if (isReviewMode && currentQuiz) {
-    const questions = currentQuiz.questions as QuizQuestion[];
-    const question = questions[reviewIndex];
-    const result = questionResults[reviewIndex];
+  const generateQuiz = async () => {
+    if (!selectedSubject) return;
 
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class: 'Class 10',
+          subject: selectedSubject,
+          topic: selectedTopic || undefined,
+          difficulty: selectedDifficulty,
+          count: 10
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to generate quiz');
+      
+      const quiz = await response.json();
+      setQuestions(quiz.questions);
+      setUserAnswers(new Array(quiz.questions.length).fill(''));
+      setCurrentQuestionIndex(0);
+      setTimer(0);
+      setQuizMode('quiz');
+    } catch (error) {
+      console.error('Quiz generation error:', error);
+      // Fallback sample questions
+      const sampleQuestions: QuizQuestion[] = [
+        {
+          id: '1',
+          question: 'What is the square root of 144?',
+          options: ['10', '11', '12', '13'],
+          correctAnswer: '12',
+          explanation: 'The square root of 144 is 12 because 12 × 12 = 144.',
+          difficulty: 'easy',
+          topic: 'Algebra'
+        },
+        {
+          id: '2',
+          question: 'Which of the following is a prime number?',
+          options: ['15', '17', '21', '25'],
+          correctAnswer: '17',
+          explanation: 'A prime number is a number greater than 1 that has no positive divisors other than 1 and itself. 17 is only divisible by 1 and 17.',
+          difficulty: 'medium',
+          topic: 'Number Theory'
+        }
+      ];
+      setQuestions(sampleQuestions);
+      setUserAnswers(new Array(sampleQuestions.length).fill(''));
+      setCurrentQuestionIndex(0);
+      setTimer(0);
+      setQuizMode('quiz');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectAnswer = (answer: string) => {
+    setSelectedAnswer(answer);
+    const newAnswers = [...userAnswers];
+    newAnswers[currentQuestionIndex] = answer;
+    setUserAnswers(newAnswers);
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+      setSelectedAnswer(userAnswers[currentQuestionIndex + 1] || '');
+    } else {
+      finishQuiz();
+    }
+  };
+
+  const prevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+      setSelectedAnswer(userAnswers[currentQuestionIndex - 1] || '');
+    }
+  };
+
+  const finishQuiz = () => {
+    const correctCount = questions.reduce((count, question, index) => {
+      return count + (userAnswers[index] === question.correctAnswer ? 1 : 0);
+    }, 0);
+
+    const score = Math.round((correctCount / questions.length) * 100);
+    const results: QuizResults = {
+      score,
+      correctCount,
+      totalQuestions: questions.length,
+      timeSpent: timer
+    };
+
+    setQuizResults(results);
+    
+    // Save to history
+    addQuizResult({
+      subject: selectedSubject,
+      topic: selectedTopic || 'Mixed Topics',
+      score,
+      totalQuestions: questions.length,
+      timeSpent: timer,
+      difficulty: selectedDifficulty
+    });
+
+    // Update user points
+    const pointsEarned = Math.max(score - 50, 0);
+    updateProfile({ totalPoints: prev => (prev || 0) + pointsEarned });
+
+    setQuizMode('results');
+  };
+
+  const resetQuiz = () => {
+    setQuizMode('setup');
+    setSelectedSubject('');
+    setSelectedTopic('');
+    setQuestions([]);
+    setUserAnswers([]);
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer('');
+    setTimer(0);
+    setQuizResults(null);
+    setReviewMode(false);
+  };
+
+  const startReview = () => {
+    setReviewMode(true);
+    setCurrentQuestionIndex(0);
+    setQuizMode('review');
+  };
+
+  const retryWrongOnly = () => {
+    const wrongQuestions = questions.filter((question, index) => 
+      userAnswers[index] !== question.correctAnswer
+    );
+    setQuestions(wrongQuestions);
+    setUserAnswers(new Array(wrongQuestions.length).fill(''));
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer('');
+    setTimer(0);
+    setQuizMode('quiz');
+  };
+
+  if (quizMode === 'setup') {
     return (
       <div className="p-4 space-y-6 pb-20">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Review Mode - Question {reviewIndex + 1}</CardTitle>
-              <Button variant="outline" onClick={() => setIsReviewMode(false)}>
-                Exit Review
-              </Button>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Start New Quiz
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                {question.question}
-              </ReactMarkdown>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Subject</label>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(subject => (
+                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
-              {question.options.map((option, index) => (
-                <div
-                  key={index}
-                  className={`p-4 border rounded-lg ${
-                    option === question.correctAnswer 
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : option === result?.userAnswer && !result?.correct
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                      : 'border-border'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {option === question.correctAnswer && (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    )}
-                    {option === result?.userAnswer && !result?.correct && (
-                      <XCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    <span className="flex-1">{option}</span>
-                  </div>
-                </div>
-              ))}
+            {selectedSubject && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Topic (Optional)</label>
+                <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a topic or leave for mixed" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Mixed Topics</SelectItem>
+                    {topicsBySubject[selectedSubject]?.map(topic => (
+                      <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Difficulty</label>
+              <Select value={selectedDifficulty} onValueChange={(value: any) => setSelectedDifficulty(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <Card className="bg-blue-50 dark:bg-blue-900/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-2">
-                  <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-blue-800 dark:text-blue-200">Explanation</h4>
-                    <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 prose prose-sm">
-                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                        {question.explanation}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setReviewIndex(Math.max(0, reviewIndex - 1))}
-                disabled={reviewIndex === 0}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setReviewIndex(Math.min(questions.length - 1, reviewIndex + 1))}
-                disabled={reviewIndex === questions.length - 1}
-              >
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
+            <Button 
+              onClick={generateQuiz} 
+              disabled={!selectedSubject || isLoading}
+              className="w-full"
+            >
+              {isLoading ? 'Generating Quiz...' : 'Start Quiz'}
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Results Screen
-  if (showResults && quizResults) {
-    const wrongQuestions = questionResults.filter(r => !r.correct);
-    const averageTime = questionResults.reduce((sum, r) => sum + r.timeSpent, 0) / questionResults.length;
+  if (!questions.length) {
+    return <div className="p-4">Loading...</div>;
+  }
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+  if (quizMode === 'results') {
+    const wrongQuestions = questions.filter((question, index) => 
+      userAnswers[index] !== question.correctAnswer
+    );
 
     return (
       <div className="p-4 space-y-6 pb-20">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Quiz Completed!</CardTitle>
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Quiz Complete!
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
-              <div className="text-6xl font-bold text-primary mb-2">
-                {quizResults.score}%
+              <div className="text-4xl font-bold text-primary mb-2">
+                {quizResults?.score}%
               </div>
               <p className="text-muted-foreground">
-                {quizResults.correctCount} out of {quizResults.totalQuestions} correct
+                {quizResults?.correctCount} out of {quizResults?.totalQuestions} correct
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Time: {formatTime(timer)} • Avg: {formatTime(Math.round(averageTime))} per question
+                Time: {formatTime(quizResults?.timeSpent || 0)}
               </p>
-            </div>
-            
-            <div className="flex justify-center">
-              <Badge 
-                variant={quizResults.score >= 80 ? "default" : quizResults.score >= 60 ? "secondary" : "destructive"}
-                className="text-lg px-4 py-2"
-              >
-                {quizResults.score >= 80 ? "Excellent!" : quizResults.score >= 60 ? "Good Job!" : "Keep Practicing!"}
-              </Badge>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{quizResults.correctCount}</div>
+                <div className="text-2xl font-bold text-green-600">{quizResults?.correctCount}</div>
                 <div className="text-sm text-green-700 dark:text-green-300">Correct</div>
               </div>
               <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
@@ -372,7 +351,7 @@ export default function Quiz() {
               </Button>
             )}
 
-            <Button onClick={() => startQuiz(selectedSubject, selectedTopic)} className="w-full">
+            <Button onClick={() => generateQuiz()} className="w-full">
               Try Again
             </Button>
           </CardContent>
@@ -381,34 +360,23 @@ export default function Quiz() {
     );
   }
 
-  // Quiz Taking Screen
-  if (currentQuiz) {
-    const questions = currentQuiz.questions as QuizQuestion[];
-    const currentQuestion = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  if (quizMode === 'review') {
+    const userAnswer = userAnswers[currentQuestionIndex];
+    const isCorrect = userAnswer === currentQuestion.correctAnswer;
 
     return (
       <div className="p-4 space-y-6 pb-20">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-lg">
-                  Question {currentQuestionIndex + 1} of {questions.length}
-                </CardTitle>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {formatTime(timer)}
-                  </div>
-                  <div>{selectedSubject}: {selectedTopic || 'Mixed Topics'}</div>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={resetQuiz}>
-                Exit
-              </Button>
+              <CardTitle className="text-lg">
+                Review {currentQuestionIndex + 1} of {questions.length}
+              </CardTitle>
+              <Badge variant={isCorrect ? "default" : "destructive"}>
+                {isCorrect ? "Correct" : "Wrong"}
+              </Badge>
             </div>
-            <Progress value={progress} className="mt-2" />
+            <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} />
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -418,77 +386,57 @@ export default function Quiz() {
             </div>
             
             <div className="space-y-2">
-              {currentQuestion.options.map((option, index) => (
-                <Button
-                  key={index}
-                  variant={selectedAnswer === option ? "default" : "outline"}
-                  className={`w-full justify-start text-left h-auto p-4 ${
-                    showExplanation ? (
-                      option === currentQuestion.correctAnswer 
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                        : option === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer
-                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                        : ''
-                    ) : ''
-                  }`}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={showExplanation}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    {showExplanation && option === currentQuestion.correctAnswer && (
-                      <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    )}
-                    {showExplanation && option === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswer && (
-                      <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                    )}
+              {currentQuestion.options.map((option, index) => {
+                const isUserAnswer = option === userAnswer;
+                const isCorrectAnswer = option === currentQuestion.correctAnswer;
+                
+                let variant: "outline" | "default" | "destructive" = "outline";
+                if (isCorrectAnswer) variant = "default";
+                else if (isUserAnswer && !isCorrect) variant = "destructive";
+
+                return (
+                  <Button
+                    key={index}
+                    variant={variant}
+                    className="w-full justify-start text-left h-auto p-3"
+                    disabled
+                  >
                     <span className="flex-1">{option}</span>
-                  </div>
-                </Button>
-              ))}
+                    {isUserAnswer && <Badge variant="secondary" className="ml-2">Your Answer</Badge>}
+                    {isCorrectAnswer && <Badge variant="default" className="ml-2">Correct</Badge>}
+                  </Button>
+                );
+              })}
             </div>
 
-            {showExplanation && (
-              <Card className="bg-blue-50 dark:bg-blue-900/20">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-2">
-                    <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-800 dark:text-blue-200">Explanation</h4>
-                      <div className="text-sm text-blue-700 dark:text-blue-300 mt-1 prose prose-sm">
-                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                          {currentQuestion.explanation}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Card>
-            )}
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-2">Explanation:</h4>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                    {currentQuestion.explanation}
+                  </ReactMarkdown>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={prevQuestion}
+              <Button 
+                onClick={prevQuestion} 
                 disabled={currentQuestionIndex === 0}
+                variant="outline"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-              
-              {!showExplanation ? (
-                <Button
-                  onClick={submitCurrentQuestion}
-                  disabled={!selectedAnswer}
-                >
-                  Submit Answer
+              {currentQuestionIndex === questions.length - 1 ? (
+                <Button onClick={resetQuiz}>
+                  Finish Review
                 </Button>
               ) : (
-                <Button
-                  onClick={nextQuestion}
-                  disabled={submitQuizMutation.isPending}
-                >
-                  {currentQuestionIndex === questions.length - 1 ? "Finish Quiz" : "Next Question"}
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                <Button onClick={nextQuestion}>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               )}
             </div>
@@ -498,138 +446,68 @@ export default function Quiz() {
     );
   }
 
-  // Quiz Selection Screen (same as before)
   return (
     <div className="p-4 space-y-6 pb-20">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Choose Your Quiz</h2>
-        <p className="text-muted-foreground">Select a subject and topic to test your knowledge</p>
-      </div>
-
       <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <School className="h-5 w-5 text-primary" />
-            Select Class
-          </h3>
-          <div className="grid grid-cols-3 gap-2">
-            {classes.map((cls) => (
-              <Button
-                key={cls}
-                variant={selectedClass === cls ? "default" : "outline"}
-                className="p-3"
-                onClick={() => setSelectedClass(cls)}
-              >
-                {cls}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Book className="h-5 w-5 text-accent" />
-            Select Subject
-          </h3>
-          <div className="space-y-2">
-            {subjects.map((subject) => (
-              <Button
-                key={subject.name}
-                variant="outline"
-                className="w-full p-4 h-auto justify-between"
-                onClick={() => startQuiz(subject.name)}
-                disabled={generateQuizMutation.isPending}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 ${subject.color} rounded-lg flex items-center justify-center`}>
-                    {subject.icon === 'BarChart3' && <BarChart3 className={`h-6 w-6 ${subject.iconColor}`} />}
-                    {subject.icon === 'Atom' && <Atom className={`h-6 w-6 ${subject.iconColor}`} />}
-                    {subject.icon === 'TestTube' && <TestTube className={`h-6 w-6 ${subject.iconColor}`} />}
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">{subject.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {subject.topics.join(", ")}
-                    </p>
-                  </div>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-lg">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </CardTitle>
+              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {formatTime(timer)}
                 </div>
-                <span className="text-xs">→</span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Zap className="h-5 w-5 text-warning" />
-            Quick Start
-          </h3>
-          <div className="space-y-2">
-            <Button
-              onClick={startRandomQuiz}
-              disabled={generateQuizMutation.isPending}
-              className="w-full p-4 h-auto bg-gradient-to-r from-primary to-accent text-white hover:shadow-lg"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="text-left">
-                  <p className="font-semibold">Random Quiz</p>
-                  <p className="text-xs opacity-90">Mixed topics • 10 questions</p>
-                </div>
-                <Dice6 className="h-6 w-6" />
+                <div>{selectedSubject}: {selectedTopic || 'Mixed Topics'}</div>
               </div>
-            </Button>
-            <Button
-              onClick={startRandomQuiz}
-              disabled={generateQuizMutation.isPending}
-              className="w-full p-4 h-auto bg-success text-white hover:shadow-lg"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="text-left">
-                  <p className="font-semibold">Daily Challenge</p>
-                  <p className="text-xs opacity-90">Today's special quiz • +50 points</p>
-                </div>
-                <Calendar className="h-6 w-6" />
-              </div>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {(quizHistory as Quiz[]).length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              Recent Quizzes
-            </h3>
-            <div className="space-y-3">
-              {(quizHistory as Quiz[]).slice(0, 3).map((quiz: Quiz) => (
-                <div key={quiz.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {quiz.subject}: {quiz.topic || "Mixed Topics"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Score: {quiz.score}% • {quiz.totalQuestions} questions
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => startQuiz(quiz.subject, quiz.topic || undefined)}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Button variant="ghost" size="sm" onClick={resetQuiz}>
+              Exit
+            </Button>
+          </div>
+          <Progress value={progress} className="mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="prose prose-sm max-w-none dark:prose-invert">
+            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {currentQuestion.question}
+            </ReactMarkdown>
+          </div>
+          
+          <div className="space-y-2">
+            {currentQuestion.options.map((option, index) => (
+              <Button
+                key={index}
+                variant={selectedAnswer === option ? "default" : "outline"}
+                onClick={() => selectAnswer(option)}
+                className="w-full justify-start text-left h-auto p-3"
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex justify-between">
+            <Button 
+              onClick={prevQuestion} 
+              disabled={currentQuestionIndex === 0}
+              variant="outline"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <Button 
+              onClick={nextQuestion} 
+              disabled={!selectedAnswer}
+            >
+              {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
