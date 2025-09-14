@@ -1,273 +1,146 @@
-import { GoogleGenAI } from "@google/genai";
-import type { QuizQuestion, ChatResponse } from "@shared/schema";
 
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || "" 
-});
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export interface QuizGenerationParams {
+const API_KEY = process.env.GEMINI_API_KEY || 'your-api-key-here';
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+export async function generateQuiz(params: {
   class: string;
   subject: string;
   topic?: string;
-  difficulty?: string;
-  count?: number;
-}
-
-export interface ReasoningChallenge {
-  question: string;
-  answer: string;
-}
-
-export async function getChatResponse(userMessage: string): Promise<ChatResponse> {
+  difficulty: string;
+  count: number;
+}) {
   try {
-    const systemPrompt = `You are an expert educational AI assistant specialized in helping students learn. 
-Your responses should be:
-- Clear and educational
-- Include step-by-step explanations when solving problems
-- Encourage learning and critical thinking
-- Adapt to the student's level (assume Class 10-12 level)
-- Use simple language but be thorough
-- Always provide the reasoning behind answers
-
-Focus on subjects like Mathematics, Physics, Chemistry, and general academic topics.
-If asked about non-academic topics, gently redirect to educational content.`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: systemPrompt,
-      },
-      contents: userMessage,
-    });
-
-    const responseText = response.text || "I'm sorry, I couldn't generate a response. Please try asking your question differently.";
-
-    return {
-      response: responseText,
-      explanation: "AI-generated educational response",
-    };
-  } catch (error) {
-    console.error("Gemini chat error:", error);
-    throw new Error("Failed to get AI response. Please check your connection and try again.");
-  }
-}
-
-export async function generateQuizQuestions(params: QuizGenerationParams): Promise<QuizQuestion[]> {
-  try {
-    const { class: className, subject, topic, difficulty = "medium", count = 10 } = params;
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     
-    const systemPrompt = `You are an expert educational content creator. Generate ${count} multiple choice questions for ${className} ${subject}${topic ? ` focusing on ${topic}` : ""}.
+    const prompt = `Generate a quiz for ${params.class} students on ${params.subject}${params.topic ? ` focusing on ${params.topic}` : ''} with ${params.difficulty} difficulty level. Create exactly ${params.count} multiple choice questions.
 
-Requirements:
-- Questions should be appropriate for ${className} level
-- Difficulty: ${difficulty}
-- Each question should have exactly 4 options (A, B, C, D)
-- Only one correct answer per question
-- Include a brief explanation for the correct answer
-- Cover different aspects of the topic
-- Questions should test understanding, not just memorization
-
-Format your response as a JSON array with this exact structure:
-[
-  {
-    "id": "unique_id",
-    "question": "Question text here?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": "Option A",
-    "explanation": "Brief explanation of why this answer is correct"
-  }
-]`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "string" },
-              question: { type: "string" },
-              options: { 
-                type: "array", 
-                items: { type: "string" },
-                minItems: 4,
-                maxItems: 4
-              },
-              correctAnswer: { type: "string" },
-              explanation: { type: "string" }
-            },
-            required: ["id", "question", "options", "correctAnswer", "explanation"]
-          }
-        }
-      },
-      contents: `Generate ${count} quiz questions for ${className} ${subject}${topic ? ` on ${topic}` : ""} with ${difficulty} difficulty.`,
-    });
-
-    const rawJson = response.text;
-    if (!rawJson) {
-      throw new Error("Empty response from Gemini API");
-    }
-
-    const questions: QuizQuestion[] = JSON.parse(rawJson);
-    
-    // Validate and ensure proper structure
-    const validQuestions = questions.map((q, index) => ({
-      id: q.id || `q_${index + 1}`,
-      question: q.question || `Question ${index + 1}`,
-      options: Array.isArray(q.options) && q.options.length === 4 ? q.options : [
-        "Option A", "Option B", "Option C", "Option D"
-      ],
-      correctAnswer: q.correctAnswer || q.options?.[0] || "Option A",
-      explanation: q.explanation || "Explanation not provided"
-    }));
-
-    return validQuestions.slice(0, count);
-  } catch (error) {
-    console.error("Quiz generation error:", error);
-    
-    // Fallback questions if API fails
-    const fallbackQuestions: QuizQuestion[] = Array.from({ length: params.count || 10 }, (_, i) => ({
-      id: `fallback_${i + 1}`,
-      question: `Sample ${params.subject} question ${i + 1} for ${params.class}?`,
-      options: [
-        "Option A - Sample answer",
-        "Option B - Alternative answer", 
-        "Option C - Another option",
-        "Option D - Final option"
-      ],
-      correctAnswer: "Option A - Sample answer",
-      explanation: "This is a sample question. Please check your Gemini API configuration."
-    }));
-
-    return fallbackQuestions;
-  }
-}
-
-export async function generateReasoningChallenge(difficulty: string, category: string): Promise<ReasoningChallenge> {
-  try {
-    const difficultyDescriptions = {
-      easy: "simple logical reasoning suitable for beginners",
-      medium: "intermediate problem-solving requiring some analysis", 
-      hard: "advanced critical thinking with complex reasoning"
-    };
-
-    const categoryDescriptions = {
-      logic: "logic puzzles and deductive reasoning",
-      number_series: "number sequences and mathematical patterns",
-      pattern_match: "visual or conceptual pattern recognition",
-      analytical: "analytical reasoning and problem solving"
-    };
-
-    const systemPrompt = `You are an expert puzzle creator. Create a single reasoning challenge with ${difficultyDescriptions[difficulty as keyof typeof difficultyDescriptions] || 'medium difficulty'} focusing on ${categoryDescriptions[category as keyof typeof categoryDescriptions] || 'general reasoning'}.
-
-Requirements:
-- The question should be clear and unambiguous
-- Provide a single, specific correct answer
-- The answer should be concise (1-3 words or a number)
-- Difficulty: ${difficulty}
-- Category: ${category}
-
-Format your response as JSON:
+Format the response as a JSON object with this structure:
 {
-  "question": "Clear question or puzzle statement",
-  "answer": "Exact answer (brief)"
-}`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            question: { type: "string" },
-            answer: { type: "string" }
-          },
-          required: ["question", "answer"]
-        }
-      },
-      contents: `Create a ${difficulty} ${category} reasoning challenge.`,
-    });
-
-    const rawJson = response.text;
-    if (!rawJson) {
-      throw new Error("Empty response from Gemini API");
+  "questions": [
+    {
+      "id": "unique_id",
+      "question": "Question text with proper formatting for math (use LaTeX syntax like $x^2$ for math expressions)",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": "Exact text of correct option",
+      "explanation": "Detailed explanation with LaTeX math formatting where needed",
+      "difficulty": "${params.difficulty}",
+      "topic": "Specific topic name"
     }
+  ]
+}
 
-    const challenge = JSON.parse(rawJson);
+Make questions educational, accurate, and age-appropriate. Use LaTeX syntax for mathematical expressions (e.g., $\\frac{1}{2}$, $x^2 + y^2 = z^2$).`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
     
-    return {
-      question: challenge.question || "What comes next in the sequence: 2, 4, 8, 16, ?",
-      answer: challenge.answer || "32"
-    };
-  } catch (error) {
-    console.error("Reasoning challenge generation error:", error);
+    // Clean up the response
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
     
-    // Fallback challenges based on difficulty and category
-    const fallbackChallenges = {
-      easy: {
-        logic: { 
-          question: "If all cats are animals, and Fluffy is a cat, what is Fluffy?", 
-          answer: "animal" 
-        },
-        number_series: { 
-          question: "What comes next: 2, 4, 6, 8, ?", 
-          answer: "10" 
-        },
-        pattern_match: { 
-          question: "What comes next: A, B, C, D, ?", 
-          answer: "E" 
-        },
-        analytical: { 
-          question: "If today is Monday, what day will it be in 3 days?", 
-          answer: "Thursday" 
-        }
-      },
-      medium: {
-        logic: { 
-          question: "In a group of 5 people, if everyone shakes hands with everyone else exactly once, how many handshakes occur?", 
-          answer: "10" 
-        },
-        number_series: { 
-          question: "What comes next: 1, 1, 2, 3, 5, 8, ?", 
-          answer: "13" 
-        },
-        pattern_match: { 
-          question: "What comes next: 2, 6, 12, 20, 30, ?", 
-          answer: "42" 
-        },
-        analytical: { 
-          question: "A train leaves at 2 PM traveling at 60 mph. Another leaves at 3 PM from the same station traveling at 80 mph in the same direction. When will the second train catch up?", 
-          answer: "8 PM" 
-        }
-      },
-      hard: {
-        logic: { 
-          question: "Four people need to cross a bridge at night with only one flashlight. The bridge can hold only 2 people at a time. They walk at different speeds: 1, 2, 5, and 10 minutes. What's the minimum time for all to cross?", 
-          answer: "17" 
-        },
-        number_series: { 
-          question: "What comes next: 2, 6, 30, 210, 2310, ?", 
-          answer: "30030" 
-        },
-        pattern_match: { 
-          question: "If MONDAY is 123456, TEAM is 8564, what is STAY?", 
-          answer: "9856" 
-        },
-        analytical: { 
-          question: "You have 12 balls, all identical except one is heavier. Using a balance scale only 3 times, how do you find the heavy ball?", 
-          answer: "divide groups" 
-        }
+    try {
+      const quiz = JSON.parse(text);
+      
+      // Ensure questions have proper IDs
+      if (quiz.questions) {
+        quiz.questions.forEach((q: any, index: number) => {
+          if (!q.id) {
+            q.id = `q_${Date.now()}_${index}`;
+          }
+        });
       }
-    };
+      
+      return quiz;
+    } catch (parseError) {
+      console.error('Failed to parse quiz JSON:', parseError);
+      throw new Error('Invalid quiz format generated');
+    }
+  } catch (error) {
+    console.error('Gemini quiz generation error:', error);
+    throw error;
+  }
+}
 
-    const difficultyLevel = difficulty as keyof typeof fallbackChallenges;
-    const categoryType = category as keyof typeof fallbackChallenges.easy;
+export async function generateChat(message: string) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
     
-    return fallbackChallenges[difficultyLevel]?.[categoryType] || fallbackChallenges.medium.logic;
+    const prompt = `You are a helpful educational AI assistant for students. Answer this question clearly and educationally, using proper formatting including:
+- **Bold text** for emphasis
+- *Italic text* for definitions
+- LaTeX syntax for math (e.g., $x^2$, $\\frac{a}{b}$, $\\sqrt{x}$)
+- Code blocks for programming concepts
+- Lists for step-by-step explanations
+
+Keep responses concise but informative. Always be encouraging and supportive.
+
+Question: ${message}`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error('Gemini chat error:', error);
+    throw error;
+  }
+}
+
+export async function generateReasoning(params: {
+  difficulty: string;
+  category: string;
+}) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    
+    const categoryMap: Record<string, string> = {
+      'logic': 'logical reasoning and deduction',
+      'number_series': 'number patterns and sequences',
+      'pattern_match': 'visual and abstract patterns',
+      'analytical': 'analytical and critical thinking'
+    };
+    
+    const categoryDesc = categoryMap[params.category] || 'logical reasoning';
+    
+    const prompt = `Create a ${params.difficulty} difficulty reasoning challenge focused on ${categoryDesc}.
+
+Format the response as a JSON object:
+{
+  "id": "unique_id",
+  "question": "Clear, concise reasoning question",
+  "answer": "Correct answer (keep it brief)",
+  "explanation": "Step-by-step explanation of the solution",
+  "difficulty": "${params.difficulty}",
+  "category": "${categoryDesc}",
+  "points": ${params.difficulty === 'easy' ? 10 : params.difficulty === 'hard' ? 30 : 20}
+}
+
+Make the question challenging but fair, appropriate for high school students.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+    
+    // Clean up the response
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    
+    try {
+      const challenge = JSON.parse(text);
+      
+      // Ensure challenge has proper ID and timestamp
+      if (!challenge.id) {
+        challenge.id = `reasoning_${Date.now()}`;
+      }
+      challenge.createdAt = new Date().toISOString();
+      
+      return challenge;
+    } catch (parseError) {
+      console.error('Failed to parse reasoning JSON:', parseError);
+      throw new Error('Invalid reasoning format generated');
+    }
+  } catch (error) {
+    console.error('Gemini reasoning generation error:', error);
+    throw error;
   }
 }

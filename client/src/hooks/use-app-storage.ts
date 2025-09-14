@@ -177,12 +177,12 @@ export function useChatHistory() {
     return newMessage;
   };
 
-  const clearHistory = () => {
+  const clearMessages = () => {
     setMessages([]);
     localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
   };
 
-  return { messages, addMessage, clearHistory };
+  return { messages, addMessage, clearMessages };
 }
 
 export function useQuizProgress() {
