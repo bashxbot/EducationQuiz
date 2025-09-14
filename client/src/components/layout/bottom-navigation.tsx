@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Brain, Lightbulb, User } from "lucide-react";
+import { Home, MessageCircle, Trophy, User, Brain, Crown } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -6,8 +6,9 @@ const navItems = [
   { icon: Home, label: "Dashboard", path: "/" },
   { icon: MessageCircle, label: "Chat", path: "/chat" },
   { icon: Brain, label: "Quiz", path: "/quiz" },
-  { icon: Lightbulb, label: "Reasoning", path: "/reasoning" },
-  { icon: User, label: "Profile", path: "/profile" },
+  { path: "/reasoning", icon: Brain, label: "Reasoning" },
+  { path: "/leaderboard", icon: Crown, label: "Leaderboard" },
+  { path: "/profile", icon: User, label: "Profile" },
 ];
 
 export function BottomNavigation() {

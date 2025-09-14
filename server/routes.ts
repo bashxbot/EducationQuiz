@@ -68,6 +68,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/chat/stream", async (req, res) => {
+    try {
+      const { content } = req.body;
+
+      // Save user message
+      await storage.addChatMessage({
+        userId: "demo-user",
+        role: "user",
+        content,
+      });
+
+      // Set up SSE headers
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      });
+
+      // Get AI response with streaming simulation
+      const aiResponse = await getChatResponse(content);
+      const words = aiResponse.response.split(' ');
+      let accumulatedContent = '';
+
+      // Simulate streaming by sending words with delays
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i] + (i < words.length - 1 ? ' ' : '');
+        accumulatedContent += word;
+        
+        res.write(`data: ${JSON.stringify({ content: word })}\n\n`);
+        
+        // Add small delay between words for streaming effect
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      // Save complete AI message
+      await storage.addChatMessage({
+        userId: "demo-user",
+        role: "assistant",
+        content: aiResponse.response,
+      });
+
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Streaming chat error:", error);
+      res.write(`data: ${JSON.stringify({ error: "Failed to process message" })}\n\n`);
+      res.end();
+    }
+  });
+
   // Quiz endpoints
   app.post("/api/quiz/generate", async (req, res) => {
     try {

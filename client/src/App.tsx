@@ -12,6 +12,7 @@ import Chat from "@/pages/chat";
 import Quiz from "@/pages/quiz";
 import Reasoning from "@/pages/reasoning";
 import Profile from "@/pages/profile";
+import Leaderboard from "@/pages/leaderboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/quiz" component={Quiz} />
       <Route path="/reasoning" component={Reasoning} />
       <Route path="/profile" component={Profile} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route component={NotFound} />
     </Switch>
   );
