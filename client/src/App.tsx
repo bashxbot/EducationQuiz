@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { Header } from "@/components/layout/header";
 import { BottomNavigation } from "@/components/layout/bottom-navigation";
+import { AchievementProvider } from "@/providers/AchievementProvider";
 import Dashboard from "@/pages/dashboard";
 import Chat from "@/pages/chat";
 import Quiz from "@/pages/quiz";
@@ -30,7 +31,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="eduapp-theme">
-        <TooltipProvider>
+        <AchievementProvider>
+          <TooltipProvider>
           <div className="flex flex-col min-h-screen max-w-md mx-auto bg-background relative">
             <Header />
             <main className="flex-1 overflow-hidden">
@@ -39,7 +41,8 @@ function App() {
             <BottomNavigation />
           </div>
           <Toaster />
-        </TooltipProvider>
+          </TooltipProvider>
+        </AchievementProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

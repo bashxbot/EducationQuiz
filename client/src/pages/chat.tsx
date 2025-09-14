@@ -1,29 +1,39 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { ChatMessage } from "@shared/schema";
+import { useChatHistory, type ChatMessage } from "@/hooks/use-app-storage";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
-
-  const { data: messages = [], isLoading } = useQuery({
-    queryKey: ["/api/chat/history"],
-  });
+  const { messages, addMessage, clearHistory } = useChatHistory();
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      setIsLoading(true);
+      // Add user message immediately
+      addMessage({ role: "user", content });
+      
+      // Send to API and get response
       const response = await apiRequest("POST", "/api/chat/message", { content });
-      return response.json();
+      const data = await response.json();
+      
+      // Add AI response
+      addMessage({ role: "assistant", content: data.aiMessage.content });
+      
+      setIsLoading(false);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
       setMessage("");
+    },
+    onError: () => {
+      setIsLoading(false);
     },
   });
 
@@ -112,6 +122,20 @@ export default function Chat() {
 
       {/* Chat Input */}
       <div className="p-4 border-t border-border bg-card">
+        {messages.length > 0 && (
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearHistory}
+              className="text-xs"
+              data-testid="button-clear-chat"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Clear Chat
+            </Button>
+          </div>
+        )}
         <div className="flex gap-2">
           <Input
             type="text"
@@ -120,12 +144,12 @@ export default function Chat() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             className="flex-1"
-            disabled={sendMessageMutation.isPending}
+            disabled={sendMessageMutation.isPending || isLoading}
             data-testid="input-chat-message"
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!message.trim() || sendMessageMutation.isPending}
+            disabled={!message.trim() || sendMessageMutation.isPending || isLoading}
             data-testid="button-send-message"
           >
             <Send className="h-4 w-4" />
