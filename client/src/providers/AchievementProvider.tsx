@@ -1,32 +1,62 @@
-import { createContext, useContext, useEffect } from "react";
-import { useUserProfile, useQuizHistory, useReasoningProgress } from "@/hooks/use-app-storage";
-import { useAutoAchievements } from "@/hooks/use-badges";
 
-interface AchievementContextType {
-  // Could add methods here for manual badge checking if needed
+import React, { createContext, useContext, useState, ReactNode } from "react";
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: Date;
 }
 
-const AchievementContext = createContext<AchievementContextType>({});
+interface AchievementContextType {
+  achievements: Achievement[];
+  unlockedAchievements: Achievement[];
+  unlockAchievement: (achievementId: string) => void;
+}
 
-export function AchievementProvider({ children }: { children: React.ReactNode }) {
-  const { profile } = useUserProfile();
-  const { history } = useQuizHistory();
-  const { progress: reasoningProgress } = useReasoningProgress();
+const AchievementContext = createContext<AchievementContextType | undefined>(undefined);
 
-  // Automatically check achievements whenever relevant data changes
-  useAutoAchievements({
-    totalQuizzes: history.length,
-    history,
-    totalPoints: profile.totalPoints,
-    currentStreak: reasoningProgress.currentStreak,
-    reasoningAccuracy: reasoningProgress.accuracyRate,
-  });
+export function AchievementProvider({ children }: { children: ReactNode }) {
+  const [unlockedAchievements, setUnlockedAchievements] = useState<Achievement[]>([]);
+  
+  const achievements: Achievement[] = [
+    {
+      id: "first-chat",
+      title: "First Chat",
+      description: "Sent your first message",
+      icon: "💬"
+    },
+    {
+      id: "quiz-master",
+      title: "Quiz Master", 
+      description: "Completed your first quiz",
+      icon: "🧠"
+    }
+  ];
+
+  const unlockAchievement = (achievementId: string) => {
+    const achievement = achievements.find(a => a.id === achievementId);
+    if (achievement && !unlockedAchievements.find(a => a.id === achievementId)) {
+      setUnlockedAchievements(prev => [...prev, { ...achievement, unlockedAt: new Date() }]);
+    }
+  };
 
   return (
-    <AchievementContext.Provider value={{}}>
+    <AchievementContext.Provider value={{
+      achievements,
+      unlockedAchievements,
+      unlockAchievement
+    }}>
       {children}
     </AchievementContext.Provider>
   );
 }
 
-export const useAchievements = () => useContext(AchievementContext);
+export function useAchievements() {
+  const context = useContext(AchievementContext);
+  if (!context) {
+    throw new Error("useAchievements must be used within AchievementProvider");
+  }
+  return context;
+}
