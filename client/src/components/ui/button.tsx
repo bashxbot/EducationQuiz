@@ -10,17 +10,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "edu-button",
+        default: "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft",
+          "bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/40 hover:scale-105",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-soft hover:shadow-soft-md",
+          "border border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white/30 shadow-lg hover:shadow-xl hover:scale-105",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-soft hover:shadow-soft-md",
-        ghost: "hover:bg-accent/10 hover:text-accent",
-        link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-soft hover:shadow-soft-md",
-        success: "bg-success text-white hover:bg-success/90 shadow-soft hover:shadow-soft-md",
+          "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 shadow-lg hover:shadow-xl hover:scale-105",
+        ghost: "text-purple-200 hover:bg-white/10 hover:text-white hover:scale-105",
+        link: "text-purple-300 underline-offset-4 hover:underline hover:text-white",
+        accent: "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-105",
+        success: "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105",
       },
       size: {
         default: "h-10 px-4 py-2",

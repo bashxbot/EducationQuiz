@@ -34,7 +34,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="eduapp-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="eduapp-theme">
         <AchievementProvider>
           <TooltipProvider>
           <div className="flex flex-col min-h-screen max-w-md mx-auto relative bg-background overflow-x-hidden">

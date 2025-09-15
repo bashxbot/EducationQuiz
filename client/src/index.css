@@ -5,30 +5,30 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --background-secondary: #fafbfc;
-  --background-tertiary: #f1f5f9;
-  --foreground: #1e293b;
-  --card: #ffffff;
-  --card-foreground: #1e293b;
-  --popover: #ffffff;
-  --popover-foreground: #1e293b;
-  --primary: #2563eb;
+  --background: rgba(255, 255, 255, 0.05);
+  --background-secondary: rgba(255, 255, 255, 0.08);
+  --background-tertiary: rgba(255, 255, 255, 0.12);
+  --foreground: #ffffff;
+  --card: rgba(255, 255, 255, 0.1);
+  --card-foreground: #ffffff;
+  --popover: rgba(255, 255, 255, 0.15);
+  --popover-foreground: #ffffff;
+  --primary: #8b5cf6;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #475569;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #7c3aed;
+  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary-foreground: rgba(255, 255, 255, 0.8);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: rgba(255, 255, 255, 0.6);
+  --accent: #a855f7;
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #ffffff;
-  --ring: #2563eb;
-  --success: #059669;
-  --warning: #d97706;
-  --radius: 0.75rem;
+  --border: rgba(255, 255, 255, 0.2);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --radius: 1rem;
   --font-heading: 'Poppins', sans-serif;
   --font-body: 'Inter', sans-serif;
   
@@ -39,27 +39,27 @@
 }
 
 .dark {
-  --background: #1e293b;
-  --background-secondary: #334155;
-  --background-tertiary: #475569;
-  --foreground: #f8fafc;
-  --card: #334155;
-  --card-foreground: #f8fafc;
-  --popover: #334155;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82f6;
+  --background: rgba(0, 0, 0, 0.3);
+  --background-secondary: rgba(0, 0, 0, 0.4);
+  --background-tertiary: rgba(0, 0, 0, 0.5);
+  --foreground: #ffffff;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-foreground: #ffffff;
+  --popover: rgba(255, 255, 255, 0.08);
+  --popover-foreground: #ffffff;
+  --primary: #a855f7;
   --primary-foreground: #ffffff;
-  --secondary: #475569;
-  --secondary-foreground: #cbd5e1;
-  --muted: #475569;
-  --muted-foreground: #94a3b8;
-  --accent: #8b5cf6;
+  --secondary: rgba(255, 255, 255, 0.05);
+  --secondary-foreground: rgba(255, 255, 255, 0.7);
+  --muted: rgba(255, 255, 255, 0.03);
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --accent: #c084fc;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #64748b;
-  --input: #334155;
-  --ring: #3b82f6;
+  --border: rgba(255, 255, 255, 0.15);
+  --input: rgba(255, 255, 255, 0.05);
+  --ring: #a855f7;
   --success: #10b981;
   --warning: #f59e0b;
 }
@@ -77,7 +77,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Educational gradient background */
+/* Attractive purple gradient background like QuickWin */
 body::before {
   content: '';
   position: fixed;
@@ -86,20 +86,20 @@ body::before {
   right: 0;
   bottom: 0;
   background: 
-    linear-gradient(135deg, rgba(37, 99, 235, 0.03) 0%, rgba(124, 58, 237, 0.02) 25%, rgba(5, 150, 105, 0.03) 50%, rgba(37, 99, 235, 0.02) 75%, rgba(124, 58, 237, 0.03) 100%),
-    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 60% 40%, rgba(5, 150, 105, 0.04) 0%, transparent 30%);
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%),
+    radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 70%, rgba(168, 85, 247, 0.4) 0%, transparent 50%);
   z-index: -1;
   pointer-events: none;
 }
 
 .dark body::before {
   background: 
-    linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(139, 92, 246, 0.015) 25%, rgba(16, 185, 129, 0.02) 50%, rgba(59, 130, 246, 0.015) 75%, rgba(139, 92, 246, 0.02) 100%),
-    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 60% 40%, rgba(16, 185, 129, 0.03) 0%, transparent 30%);
+    linear-gradient(135deg, #2d1b69 0%, #11047a 50%, #3730a3 100%),
+    radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 40% 70%, rgba(168, 85, 247, 0.5) 0%, transparent 50%);
 }
 
 @layer base {
@@ -122,18 +122,21 @@ body::before {
 }
 
 @layer components {
-  /* Modern card styles */
+  /* Modern glassmorphic card styles */
   .modern-card {
-    background: var(--card);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .modern-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
   }
 
   /* Educational button styles */
@@ -302,16 +305,18 @@ body::before {
     transition: width 0.3s ease;
   }
 
-  /* Glass effect for modals */
+  /* Enhanced glass effect for modals */
   .glass {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   }
 
   .dark .glass {
-    background: rgba(30, 41, 59, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 }
 

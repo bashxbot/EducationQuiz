@@ -7,14 +7,14 @@ export function Header() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-50 modern-card border-b border-border px-4 py-3 flex items-center justify-between backdrop-blur-sm bg-background/95">
+    <header className="sticky top-0 z-50 modern-card border-b border-border px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center shadow-soft">
-          <GraduationCap className="text-white h-6 w-6" />
+        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+          <GraduationCap className="text-white h-7 w-7" />
         </div>
         <div>
-          <h1 className="font-heading font-bold text-xl gradient-text">EduLearn</h1>
-          <p className="text-xs text-muted-foreground font-body">Smart Learning Platform</p>
+          <h1 className="font-heading font-bold text-2xl bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">EduLearn</h1>
+          <p className="text-xs text-purple-200 font-body">Smart Learning Platform</p>
         </div>
       </div>
       <Button

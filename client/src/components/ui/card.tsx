@@ -10,7 +10,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "modern-card slide-in-up",
+      "modern-card slide-in-up hover:shadow-2xl hover:shadow-purple-500/10",
       className
     )}
     {...props}
@@ -37,7 +37,7 @@ const CardTitle = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight font-heading text-foreground",
+      "text-2xl font-semibold leading-none tracking-tight font-heading bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent",
       className
     )}
     {...props}
