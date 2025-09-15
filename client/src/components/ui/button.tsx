@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -5,24 +6,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden uppercase tracking-wide font-heading",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white hover:shadow-lg hover:scale-105 shadow-md",
+        default: "neon-button",
         destructive:
-          "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:scale-105",
+          "bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:scale-105",
         outline:
-          "glass border hover:shadow-lg hover:scale-105 text-foreground backdrop-blur-sm",
+          "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] hover:scale-105",
         secondary:
-          "glass text-secondary-foreground hover:shadow-lg hover:scale-105 backdrop-blur-sm",
-        ghost: "hover:glass hover:backdrop-blur-sm hover:scale-105 transition-all duration-300",
-        link: "text-primary underline-offset-4 hover:underline hover:scale-105",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-[0_0_15px_rgba(26,26,46,0.5)] hover:scale-105",
+        ghost: "hover:bg-accent/10 hover:text-accent hover:shadow-[0_0_15px_rgba(255,0,128,0.2)] hover:scale-105",
+        link: "text-primary underline-offset-4 hover:underline hover:shadow-[0_0_10px_rgba(0,255,136,0.3)]",
+        accent: "bg-gradient-to-r from-accent to-pink-500 text-white hover:shadow-[0_0_20px_rgba(255,0,128,0.5)] hover:scale-105",
+        cyberpunk: "bg-gradient-to-r from-blue-500 to-cyan-400 text-white hover:shadow-[0_0_20px_rgba(0,212,255,0.5)] hover:scale-105",
       },
       size: {
         default: "h-11 px-6 py-3",
-        sm: "h-9 rounded-lg px-4",
-        lg: "h-13 rounded-xl px-8 text-base",
+        sm: "h-9 rounded-md px-4",
+        lg: "h-13 rounded-lg px-8 text-base",
         icon: "h-11 w-11",
       },
     },

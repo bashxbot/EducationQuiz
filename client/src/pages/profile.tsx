@@ -31,7 +31,8 @@ import {
   Lightbulb,
   CheckCircle,
   AlertTriangle,
-  XCircle
+  XCircle,
+  Zap
 } from "lucide-react";
 import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData } from "@/hooks/use-app-storage";
 import { useBadges, useAutoAchievements } from "@/hooks/use-badges";
@@ -48,25 +49,27 @@ export default function Profile() {
   const [editedProfile, setEditedProfile] = useState(profile);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Auto-trigger achievements
+  // Safe badge data object with proper defaults
   const badgeData = {
-    totalQuizzes: quizHistory.length,
-    history: quizHistory,
-    totalPoints: profile.totalPoints,
-    currentStreak: profile.currentStreak,
-    reasoningAccuracy: reasoningProgress.totalSolved > 0
+    totalQuizzes: quizHistory?.length || 0,
+    history: quizHistory || [],
+    totalPoints: profile?.totalPoints || 0,
+    currentStreak: profile?.currentStreak || 0,
+    reasoningAccuracy: reasoningProgress?.totalSolved > 0
       ? Math.round((reasoningProgress.accuracyRate * reasoningProgress.totalSolved) / reasoningProgress.totalSolved)
       : 0
   };
+
+  // Auto-trigger achievements with safe data
   useAutoAchievements(badgeData);
 
-  // Calculate stats
-  const totalQuizzes = quizHistory.length;
+  // Calculate stats with safe defaults
+  const totalQuizzes = quizHistory?.length || 0;
   const averageScore = totalQuizzes > 0 
-    ? Math.round(quizHistory.reduce((sum: number, quiz: any) => sum + quiz.score, 0) / totalQuizzes)
+    ? Math.round(quizHistory.reduce((sum: number, quiz: any) => sum + (quiz.score || 0), 0) / totalQuizzes)
     : 0;
-  const totalReasoningChallenges = reasoningProgress.totalSolved;
-  const reasoningAccuracy = reasoningProgress.accuracyRate;
+  const totalReasoningChallenges = reasoningProgress?.totalSolved || 0;
+  const reasoningAccuracy = reasoningProgress?.accuracyRate || 0;
 
   const handleSaveProfile = () => {
     updateProfile(editedProfile);
@@ -104,7 +107,7 @@ export default function Profile() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'study-buddy-data.json';
+    a.download = 'neolearn-data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -113,51 +116,25 @@ export default function Profile() {
 
   // Badge statistics
   const allBadgeDefinitions = getAllBadgeDefinitions();
-  const earnedBadgeIds = new Set(badges.map(b => b.id));
+  const earnedBadgeIds = new Set((badges || []).map(b => b.id));
   const badgeStats = {
     total: allBadgeDefinitions.length,
-    earned: badges.length,
-    progress: Math.round((badges.length / allBadgeDefinitions.length) * 100)
+    earned: (badges || []).length,
+    progress: allBadgeDefinitions.length > 0 ? Math.round(((badges || []).length / allBadgeDefinitions.length) * 100) : 0
   };
-
-  // Achievements data
-  const userBadges = badges.map(b => b.id);
-  const achievements = [
-    { 
-      icon: Target,
-      title: 'Perfect Score',
-      description: 'Scored 100% on a quiz',
-      points: 50,
-      earned: earnedBadgeIds.has('perfectionist')
-    },
-    { 
-      icon: Trophy,
-      title: 'Quiz Master',
-      description: 'Completed 10 quizzes',
-      points: 100,
-      earned: earnedBadgeIds.has('quiz-master')
-    },
-    { 
-      icon: Flame,
-      title: 'Speed Demon',
-      description: 'Completed a quiz in under 2 minutes',
-      points: 75,
-      earned: earnedBadgeIds.has('speedster')
-    }
-  ];
-
 
   return (
     <div className="p-4 space-y-6 pb-20">
       {/* Profile Header */}
-      <Card>
+      <Card className="neon-border">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                {profile.name?.charAt(0) || 'A'}
+              <div className="w-20 h-20 bg-gradient-to-br from-primary via-accent to-blue-500 rounded-full flex items-center justify-center text-black text-2xl font-heading font-bold relative overflow-hidden">
+                <span className="relative z-10">{profile?.name?.charAt(0) || 'N'}</span>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 animate-pulse"></div>
               </div>
-              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0">
+              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 border-primary hover:bg-primary hover:text-black">
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
@@ -169,27 +146,31 @@ export default function Profile() {
                     value={editedProfile.name}
                     onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Full Name"
+                    className="border-primary/30 focus:border-primary"
                   />
                   <Input
                     value={editedProfile.email}
                     onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Email"
                     type="email"
+                    className="border-primary/30 focus:border-primary"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Input
                       value={editedProfile.class}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, class: e.target.value }))}
                       placeholder="Class"
+                      className="border-primary/30 focus:border-primary"
                     />
                     <Input
                       value={editedProfile.school}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, school: e.target.value }))}
                       placeholder="School"
+                      className="border-primary/30 focus:border-primary"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSaveProfile}>
+                    <Button size="sm" onClick={handleSaveProfile} variant="default">
                       <Save className="h-4 w-4 mr-1" />
                       Save
                     </Button>
@@ -202,20 +183,20 @@ export default function Profile() {
               ) : (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-xl font-bold">{profile.name}</h2>
-                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+                    <h2 className="text-xl font-bold gradient-text font-heading">{profile?.name || 'Neo User'}</h2>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)} className="hover:text-primary">
                       <Edit3 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-muted-foreground text-sm">{profile.email}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {profile.class} • {profile.school}
+                  <p className="text-muted-foreground text-sm font-body">{profile?.email || 'user@neolearn.ai'}</p>
+                  <p className="text-muted-foreground text-sm font-body">
+                    {profile?.class || 'Neural Class'} • {profile?.school || 'Digital Academy'}
                   </p>
                 </div>
               )}
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
+            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)} className="hover:text-primary">
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -224,74 +205,74 @@ export default function Profile() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-4">
-        <Card>
+        <Card className="neon-border">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Target className="h-5 w-5 text-primary" />
-              <div className="text-2xl font-bold text-primary">{profile.totalPoints}</div>
+              <Zap className="h-5 w-5 text-primary" />
+              <div className="text-2xl font-bold text-neon font-heading">{profile?.totalPoints || 0}</div>
             </div>
-            <p className="text-sm text-muted-foreground">Total Points</p>
+            <p className="text-sm text-muted-foreground font-body">Neural Points</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="neon-border">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Flame className="h-5 w-5 text-orange-500" />
-              <div className="text-2xl font-bold text-orange-500">{profile.currentStreak}</div>
+              <Flame className="h-5 w-5 text-accent" />
+              <div className="text-2xl font-bold text-neon-accent font-heading">{profile?.currentStreak || 0}</div>
             </div>
-            <p className="text-sm text-muted-foreground">Day Streak</p>
+            <p className="text-sm text-muted-foreground font-body">Day Streak</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Academic Performance */}
-      <Card>
+      <Card className="neon-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 gradient-text">
             <Trophy className="h-5 w-5" />
-            Academic Performance
+            Neural Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{totalQuizzes}</div>
-              <p className="text-sm text-muted-foreground">Quizzes Completed</p>
+            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="text-lg font-bold text-neon font-heading">{totalQuizzes}</div>
+              <p className="text-sm text-muted-foreground font-body">Neural Tests</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{averageScore}%</div>
-              <p className="text-sm text-muted-foreground">Average Score</p>
+            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors">
+              <div className="text-lg font-bold text-neon-accent font-heading">{averageScore}%</div>
+              <p className="text-sm text-muted-foreground font-body">Avg Score</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{totalReasoningChallenges}</div>
-              <p className="text-sm text-muted-foreground">Reasoning Challenges</p>
+            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+              <div className="text-lg font-bold text-neon-blue font-heading">{totalReasoningChallenges}</div>
+              <p className="text-sm text-muted-foreground font-body">Logic Puzzles</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{reasoningAccuracy}%</div>
-              <p className="text-sm text-muted-foreground">Reasoning Accuracy</p>
+            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="text-lg font-bold text-neon font-heading">{reasoningAccuracy}%</div>
+              <p className="text-sm text-muted-foreground font-body">Logic Accuracy</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Badges & Achievements */}
-      <Card>
+      <Card className="neon-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 gradient-text">
             <Award className="h-5 w-5" />
-            Badges & Achievements
+            Neural Badges
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
+            <div className="flex justify-between text-sm mb-2 font-body">
               <span>Progress: {badgeStats.earned}/{badgeStats.total}</span>
-              <span>{badgeStats.progress}%</span>
+              <span className="text-neon">{badgeStats.progress}%</span>
             </div>
-            <div className="w-full bg-secondary rounded-full h-2">
+            <div className="w-full bg-secondary rounded-full h-3 border border-primary/20">
               <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(0,255,136,0.5)]" 
                 style={{ width: `${badgeStats.progress}%` }}
               ></div>
             </div>
@@ -300,10 +281,10 @@ export default function Profile() {
           <div className="grid grid-cols-4 gap-3">
             {allBadgeDefinitions.map((badge: any, index: number) => (
               <div key={`badge-${badge.id}-${index}`} className="text-center">
-                <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl ${
+                <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl transition-all duration-300 ${
                   earnedBadgeIds.has(badge.id) 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-br from-primary to-accent text-black shadow-[0_0_15px_rgba(0,255,136,0.5)]' 
+                    : 'bg-muted text-muted-foreground border border-border'
                 }`}>
                   {badge.id === 'scholar' && <BookOpen className="h-6 w-6" />}
                   {badge.id === 'speedster' && <Target className="h-6 w-6" />}
@@ -311,63 +292,38 @@ export default function Profile() {
                   {badge.id === 'streaker' && <Flame className="h-6 w-6" />}
                   {!['scholar', 'speedster', 'perfectionist', 'streaker'].includes(badge.id) && <Medal className="h-6 w-6" />}
                 </div>
-                <p className="text-xs font-medium">{badge.name}</p>
-                <p className="text-xs text-muted-foreground">{badge.description}</p>
+                <p className="text-xs font-medium font-body">{badge.name}</p>
+                <p className="text-xs text-muted-foreground font-body">{badge.description}</p>
               </div>
             ))}
-          </div>
-          
-          {/* Achievements Section */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Lightbulb className="h-5 w-5" />
-              Your Achievements
-            </h3>
-            <div className="space-y-3">
-              {achievements.map((achievement, index) => (
-                    <div 
-                      key={`achievement-${index}`}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <achievement.icon className="h-5 w-5 text-primary" />
-                        <div>
-                          <h4 className="font-medium">{achievement.title}</h4>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">{achievement.points} pts</Badge>
-                    </div>
-                  ))}
-            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="neon-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 gradient-text">
             <History className="h-5 w-5" />
-            Recent Activity
+            Neural Activity
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {quizHistory.slice(0, 5).map((quiz: any, index: number) => (
-              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
+            {(quizHistory || []).slice(0, 5).map((quiz: any, index: number) => (
+              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg border border-primary/10 hover:border-primary/30 transition-colors">
                 <div>
-                  <p className="font-medium">{quiz.subject}</p>
-                  <p className="text-sm text-muted-foreground">{quiz.topic}</p>
+                  <p className="font-medium text-neon font-body">{quiz.subject}</p>
+                  <p className="text-sm text-muted-foreground font-body">{quiz.topic}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold">{quiz.score}%</p>
-                  <p className="text-sm text-muted-foreground">{quiz.difficulty}</p>
+                  <p className="font-bold text-neon-accent font-heading">{quiz.score}%</p>
+                  <p className="text-sm text-muted-foreground font-body">{quiz.difficulty}</p>
                 </div>
               </div>
             ))}
-            {quizHistory.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">No recent activity</p>
+            {(!quizHistory || quizHistory.length === 0) && (
+              <p className="text-center text-muted-foreground py-4 font-body">No neural activity detected</p>
             )}
           </div>
         </CardContent>
@@ -375,66 +331,59 @@ export default function Profile() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent>
+        <DialogContent className="neon-card border-primary/30">
           <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
+            <DialogTitle className="gradient-text font-heading">Neural Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Theme</label>
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant={theme === 'light' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setTheme('light')}
-                >
-                  Light
-                </Button>
+              <label className="text-sm font-medium mb-2 block font-body">Interface Theme</label>
+              <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={theme === 'dark' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('dark')}
                 >
-                  Dark
+                  Dark Neo
                 </Button>
                 <Button 
                   variant={theme === 'system' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('system')}
                 >
-                  System
+                  Auto Neo
                 </Button>
               </div>
             </div>
 
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
+            <div className="border-t border-primary/20 pt-4">
+              <h3 className="font-medium mb-3 flex items-center gap-2 text-neon font-heading">
                 <Shield className="h-4 w-4" />
-                Data Management
+                Data Control
               </h3>
               <div className="space-y-2">
-                <Button variant="outline" onClick={exportData} className="w-full justify-start">
+                <Button variant="outline" onClick={exportData} className="w-full justify-start border-primary/30 hover:border-primary">
                   <Download className="h-4 w-4 mr-2" />
-                  Export Data
+                  Export Neural Data
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-destructive">
+                    <Button variant="outline" className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive">
                       <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset All Data
+                      Reset Neural Matrix
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="neon-card border-destructive/30">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Reset All Data</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete all your progress, quiz history, and achievements.
+                      <AlertDialogTitle className="text-destructive font-heading">Reset Neural Matrix</AlertDialogTitle>
+                      <AlertDialogDescription className="font-body">
+                        This action cannot be undone. This will permanently delete all your neural progress, test history, and achievements.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground">
+                      <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground hover:bg-destructive/80">
                         Reset Data
                       </AlertDialogAction>
                     </AlertDialogFooter>

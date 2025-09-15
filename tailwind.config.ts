@@ -46,6 +46,12 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
+        neon: {
+          green: "#00ff88",
+          pink: "#ff0080",
+          blue: "#00d4ff",
+          purple: "#b400ff",
+        },
         chart: {
           "1": "var(--chart-1)",
           "2": "var(--chart-2)",
@@ -68,6 +74,8 @@ export default {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        heading: ["var(--font-heading)"],
+        body: ["var(--font-body)"],
       },
       keyframes: {
         "accordion-down": {
