@@ -115,19 +115,19 @@ export default function Leaderboard() {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-5 w-5 text-yellow-500" />;
+        return <Crown className="h-5 w-5 text-yellow-500 neon-accent" />;
       case 2:
         return <Medal className="h-5 w-5 text-gray-400" />;
       case 3:
         return <Medal className="h-5 w-5 text-amber-600" />;
       default:
-        return <span className="text-sm font-medium">#{rank}</span>;
+        return <span className="text-sm font-medium font-display">#{rank}</span>;
     }
   };
 
   const getRankChangeIcon = (change: number) => {
-    if (change > 0) return <span className="text-green-600 text-xs">↑{change}</span>;
-    if (change < 0) return <span className="text-red-600 text-xs">↓{Math.abs(change)}</span>;
+    if (change > 0) return <span className="text-green-600 text-xs font-bold">↑{change}</span>;
+    if (change < 0) return <span className="text-red-600 text-xs font-bold">↓{Math.abs(change)}</span>;
     return <span className="text-gray-500 text-xs">-</span>;
   };
 
@@ -175,49 +175,49 @@ export default function Leaderboard() {
       <div className="flex justify-center items-end gap-4 mb-6 p-4">
         {/* 2nd Place */}
         {topThree[1] && (
-          <div className="text-center">
+          <div className="text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <div className="relative mb-2">
-              <div className="w-16 h-20 bg-gray-200 rounded-t-lg flex items-end justify-center pb-2">
-                <span className="text-lg font-bold text-gray-600">2</span>
+              <div className="w-16 h-20 glass-border rounded-t-lg flex items-end justify-center pb-2 hover-lift">
+                <span className="text-lg font-bold text-gray-300 font-display">2</span>
               </div>
-              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-white">
-                <AvatarFallback>{topThree[1].name.charAt(0)}</AvatarFallback>
+              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-primary glass-border">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">{topThree[1].name.charAt(0)}</AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-medium text-sm">{topThree[1].name}</h3>
-            <p className="text-xs text-muted-foreground">{topThree[1].totalPoints} pts</p>
+            <h3 className="font-medium text-sm font-display">{topThree[1].name}</h3>
+            <p className="text-xs text-muted-foreground gradient-text">{topThree[1].totalPoints} pts</p>
           </div>
         )}
 
         {/* 1st Place */}
         {topThree[0] && (
-          <div className="text-center">
+          <div className="text-center animate-slide-up float-animation">
             <div className="relative mb-2">
-              <div className="w-16 h-24 bg-yellow-400 rounded-t-lg flex items-end justify-center pb-2">
+              <div className="w-16 h-24 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-t-lg flex items-end justify-center pb-2 neon-primary hover-lift">
                 <Crown className="h-6 w-6 text-white" />
               </div>
-              <Avatar className="w-14 h-14 mx-auto -mt-7 ring-2 ring-yellow-400">
-                <AvatarFallback>{topThree[0].name.charAt(0)}</AvatarFallback>
+              <Avatar className="w-14 h-14 mx-auto -mt-7 ring-2 ring-yellow-400 neon-primary">
+                <AvatarFallback className="bg-gradient-to-br from-yellow-400 to-yellow-600 text-white font-bold">{topThree[0].name.charAt(0)}</AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-medium text-sm">{topThree[0].name}</h3>
+            <h3 className="font-medium text-sm font-display gradient-text">{topThree[0].name}</h3>
             <p className="text-xs text-muted-foreground">{topThree[0].totalPoints} pts</p>
           </div>
         )}
 
         {/* 3rd Place */}
         {topThree[2] && (
-          <div className="text-center">
+          <div className="text-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="relative mb-2">
-              <div className="w-16 h-16 bg-amber-600 rounded-t-lg flex items-end justify-center pb-2">
-                <span className="text-lg font-bold text-white">3</span>
+              <div className="w-16 h-16 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-lg flex items-end justify-center pb-2 hover-lift">
+                <span className="text-lg font-bold text-white font-display">3</span>
               </div>
-              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-white">
-                <AvatarFallback>{topThree[2].name.charAt(0)}</AvatarFallback>
+              <Avatar className="w-12 h-12 mx-auto -mt-6 ring-2 ring-amber-600 glass-border">
+                <AvatarFallback className="bg-gradient-to-br from-amber-600 to-amber-800 text-white font-bold">{topThree[2].name.charAt(0)}</AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-medium text-sm">{topThree[2].name}</h3>
-            <p className="text-xs text-muted-foreground">{topThree[2].totalPoints} pts</p>
+            <h3 className="font-medium text-sm font-display">{topThree[2].name}</h3>
+            <p className="text-xs text-muted-foreground gradient-text">{topThree[2].totalPoints} pts</p>
           </div>
         )}
       </div>
@@ -225,20 +225,20 @@ export default function Leaderboard() {
   };
 
   const LeaderboardEntry = ({ entry, showActions = false }: { entry: LeaderboardEntry; showActions?: boolean }) => (
-    <div className={`flex items-center justify-between p-3 rounded-lg ${
-      entry.id === 'demo-user' ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
+    <div className={`flex items-center justify-between p-3 rounded-lg glass-card-hover transition-all duration-300 ${
+      entry.id === 'demo-user' ? 'glass-card neon-primary' : 'glass-border hover-lift'
     }`}>
       <div className="flex items-center gap-3">
         <div className="w-8 flex justify-center">
           {getRankIcon(entry.rank)}
         </div>
-        <Avatar className="w-10 h-10">
-          <AvatarFallback>{entry.name.charAt(0)}</AvatarFallback>
+        <Avatar className="w-10 h-10 glass-border">
+          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">{entry.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-sm">{entry.name}</h3>
-            {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
+            <h3 className="font-medium text-sm font-display">{entry.name}</h3>
+            {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs glass-border neon-accent">You</Badge>}
           </div>
           <p className="text-xs text-muted-foreground">{entry.class} • {entry.school}</p>
         </div>
@@ -247,7 +247,7 @@ export default function Leaderboard() {
       <div className="flex items-center gap-4">
         <div className="text-right">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">{entry.totalPoints}</span>
+            <span className="font-medium text-sm font-display gradient-text">{entry.totalPoints}</span>
             <Trophy className="h-3 w-3 text-yellow-500" />
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -265,7 +265,7 @@ export default function Leaderboard() {
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 hover-lift"
                 onClick={() => viewProfile(entry.id)}
               >
                 <Users className="h-3 w-3" />
@@ -273,7 +273,7 @@ export default function Leaderboard() {
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 hover-lift"
                 onClick={() => challengeUser(entry.id)}
               >
                 <Target className="h-3 w-3" />
@@ -286,108 +286,114 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-2xl font-bold">Leaderboard</h1>
+          <h1 className="text-2xl font-bold font-display gradient-text">Leaderboard</h1>
           <p className="text-muted-foreground">See how you rank against others</p>
         </div>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="btn-glass hover-lift">
           <Filter className="h-4 w-4 mr-2" />
           Filters
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
         <Select value={filters.subject} onValueChange={(value) => filterLeaderboard({ subject: value })}>
-          <SelectTrigger className="h-9">
+          <SelectTrigger className="h-9 input-glass focus-enhanced">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="glass-card">
             {subjects.map(subject => (
-              <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+              <SelectItem key={subject} value={subject} className="hover:bg-primary/20">{subject}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={filters.timeframe} onValueChange={(value: any) => filterLeaderboard({ timeframe: value })}>
-          <SelectTrigger className="h-9">
+          <SelectTrigger className="h-9 input-glass focus-enhanced">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="weekly">This Week</SelectItem>
-            <SelectItem value="monthly">This Month</SelectItem>
-            <SelectItem value="all-time">All Time</SelectItem>
+          <SelectContent className="glass-card">
+            <SelectItem value="weekly" className="hover:bg-primary/20">This Week</SelectItem>
+            <SelectItem value="monthly" className="hover:bg-primary/20">This Month</SelectItem>
+            <SelectItem value="all-time" className="hover:bg-primary/20">All Time</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={filters.scope} onValueChange={(value: any) => filterLeaderboard({ scope: value })}>
-          <SelectTrigger className="h-9">
+          <SelectTrigger className="h-9 input-glass focus-enhanced">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="global">Global</SelectItem>
-            <SelectItem value="school">My School</SelectItem>
-            <SelectItem value="class">My Class</SelectItem>
+          <SelectContent className="glass-card">
+            <SelectItem value="global" className="hover:bg-primary/20">Global</SelectItem>
+            <SelectItem value="school" className="hover:bg-primary/20">My School</SelectItem>
+            <SelectItem value="class" className="hover:bg-primary/20">My Class</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="global">Global</TabsTrigger>
-          <TabsTrigger value="nearby">Nearby</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <TabsList className="grid w-full grid-cols-3 glass-card">
+          <TabsTrigger value="global" className="glass-card-hover">Global</TabsTrigger>
+          <TabsTrigger value="nearby" className="glass-card-hover">Nearby</TabsTrigger>
+          <TabsTrigger value="friends" className="glass-card-hover">Friends</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global" className="space-y-4">
           {/* Top 3 Podium */}
-          <Card>
+          <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <CardContent className="p-4">
               <TopThreeDisplay />
             </CardContent>
           </Card>
 
           {/* Rest of leaderboard */}
-          <Card>
+          <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.4s' }}>
             <CardHeader>
-              <CardTitle className="text-lg">Rankings</CardTitle>
+              <CardTitle className="text-lg font-display">Rankings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {getRestOfLeaderboard().slice(0, 20).map(entry => (
-                <LeaderboardEntry key={entry.id} entry={entry} showActions={true} />
+              {getRestOfLeaderboard().slice(0, 20).map((entry, index) => (
+                <div key={entry.id} className="animate-slide-up" style={{ animationDelay: `${0.05 * index}s` }}>
+                  <LeaderboardEntry entry={entry} showActions={true} />
+                </div>
               ))}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="nearby" className="space-y-4">
-          <Card>
+          <Card className="glass-card glass-card-hover animate-slide-up">
             <CardHeader>
-              <CardTitle className="text-lg">Users Near Your Rank</CardTitle>
+              <CardTitle className="text-lg font-display">Users Near Your Rank</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {getNearbyUsers().map(entry => (
-                <LeaderboardEntry key={entry.id} entry={entry} showActions={true} />
+              {getNearbyUsers().map((entry, index) => (
+                <div key={entry.id} className="animate-slide-up" style={{ animationDelay: `${0.1 * index}s` }}>
+                  <LeaderboardEntry entry={entry} showActions={true} />
+                </div>
               ))}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="friends" className="space-y-4">
-          <Card>
+          <Card className="glass-card glass-card-hover animate-slide-up">
             <CardHeader>
-              <CardTitle className="text-lg">Friends Leaderboard</CardTitle>
+              <CardTitle className="text-lg font-display">Friends Leaderboard</CardTitle>
             </CardHeader>
             <CardContent className="p-6 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-2">No Friends Yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect with classmates to see how you compare!
-              </p>
-              <Button variant="outline">Find Friends</Button>
+              <div className="float-animation">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="font-medium mb-2 font-display">No Friends Yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Connect with classmates to see how you compare!
+                </p>
+                <Button variant="outline" className="btn-glass hover-lift">Find Friends</Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -395,24 +401,24 @@ export default function Leaderboard() {
 
       {/* Current User Stats */}
       {getCurrentUserEntry() && (
-        <Card>
+        <Card className="glass-card glass-card-hover animate-slide-up neon-primary" style={{ animationDelay: '0.5s' }}>
           <CardHeader>
-            <CardTitle className="text-lg">Your Performance</CardTitle>
+            <CardTitle className="text-lg font-display">Your Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <LeaderboardEntry entry={getCurrentUserEntry()!} />
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="mt-4 p-3 glass-border rounded-lg">
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-lg font-bold text-primary">{getCurrentUserEntry()?.badges}</div>
+                <div className="hover-lift">
+                  <div className="text-lg font-bold text-primary font-display neon-text">{getCurrentUserEntry()?.badges}</div>
                   <div className="text-xs text-muted-foreground">Badges</div>
                 </div>
-                <div>
-                  <div className="text-lg font-bold text-green-600">{getCurrentUserEntry()?.accuracy}%</div>
+                <div className="hover-lift">
+                  <div className="text-lg font-bold text-green-600 font-display neon-text">{getCurrentUserEntry()?.accuracy}%</div>
                   <div className="text-xs text-muted-foreground">Accuracy</div>
                 </div>
-                <div>
-                  <div className="text-lg font-bold text-orange-600">{getCurrentUserEntry()?.streak}</div>
+                <div className="hover-lift">
+                  <div className="text-lg font-bold text-orange-600 font-display neon-text">{getCurrentUserEntry()?.streak}</div>
                   <div className="text-xs text-muted-foreground">Streak</div>
                 </div>
               </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -136,18 +137,17 @@ export default function Profile() {
     }
   ];
 
-
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
       {/* Profile Header */}
-      <Card>
+      <Card className="glass-card glass-card-hover animate-slide-up">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="relative float-animation">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white text-2xl font-bold font-display shadow-lg neon-primary">
                 {profile.name?.charAt(0) || 'A'}
               </div>
-              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0">
+              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 btn-glass hover-lift">
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
@@ -159,31 +159,35 @@ export default function Profile() {
                     value={editedProfile.name}
                     onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Full Name"
+                    className="input-glass focus-enhanced"
                   />
                   <Input
                     value={editedProfile.email}
                     onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Email"
                     type="email"
+                    className="input-glass focus-enhanced"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Input
                       value={editedProfile.class}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, class: e.target.value }))}
                       placeholder="Class"
+                      className="input-glass focus-enhanced"
                     />
                     <Input
                       value={editedProfile.school}
                       onChange={(e) => setEditedProfile(prev => ({ ...prev, school: e.target.value }))}
                       placeholder="School"
+                      className="input-glass focus-enhanced"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSaveProfile}>
+                    <Button size="sm" onClick={handleSaveProfile} className="btn-neon micro-bounce">
                       <Save className="h-4 w-4 mr-1" />
                       Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit} className="btn-glass micro-bounce">
                       <X className="h-4 w-4 mr-1" />
                       Cancel
                     </Button>
@@ -192,8 +196,8 @@ export default function Profile() {
               ) : (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-xl font-bold">{profile.name}</h2>
-                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+                    <h2 className="text-xl font-bold font-display gradient-text">{profile.name}</h2>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)} className="hover-lift">
                       <Edit3 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -205,7 +209,7 @@ export default function Profile() {
               )}
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
+            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)} className="hover-lift">
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -214,21 +218,21 @@ export default function Profile() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-4">
-        <Card>
+        <Card className="glass-card glass-card-hover pulse-glow animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Target className="h-5 w-5 text-primary" />
-              <div className="text-2xl font-bold text-primary">{profile.totalPoints}</div>
+              <div className="text-2xl font-bold text-primary font-display neon-text">{profile.totalPoints}</div>
             </div>
             <p className="text-sm text-muted-foreground">Total Points</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-card glass-card-hover pulse-glow animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Flame className="h-5 w-5 text-orange-500" />
-              <div className="text-2xl font-bold text-orange-500">{profile.currentStreak}</div>
+              <div className="text-2xl font-bold text-orange-500 font-display neon-text">{profile.currentStreak}</div>
             </div>
             <p className="text-sm text-muted-foreground">Day Streak</p>
           </CardContent>
@@ -236,29 +240,29 @@ export default function Profile() {
       </div>
 
       {/* Academic Performance */}
-      <Card>
+      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.3s' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-display">
             <Trophy className="h-5 w-5" />
             Academic Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{totalQuizzes}</div>
+            <div className="text-center p-3 glass-border rounded-lg hover-lift">
+              <div className="text-lg font-bold font-display gradient-text">{totalQuizzes}</div>
               <p className="text-sm text-muted-foreground">Quizzes Completed</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{averageScore}%</div>
+            <div className="text-center p-3 glass-border rounded-lg hover-lift">
+              <div className="text-lg font-bold font-display gradient-text">{averageScore}%</div>
               <p className="text-sm text-muted-foreground">Average Score</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{totalReasoningChallenges}</div>
+            <div className="text-center p-3 glass-border rounded-lg hover-lift">
+              <div className="text-lg font-bold font-display gradient-text">{totalReasoningChallenges}</div>
               <p className="text-sm text-muted-foreground">Reasoning Challenges</p>
             </div>
-            <div className="text-center p-3 bg-secondary rounded-lg">
-              <div className="text-lg font-bold">{reasoningAccuracy}%</div>
+            <div className="text-center p-3 glass-border rounded-lg hover-lift">
+              <div className="text-lg font-bold font-display gradient-text">{reasoningAccuracy}%</div>
               <p className="text-sm text-muted-foreground">Reasoning Accuracy</p>
             </div>
           </div>
@@ -266,9 +270,9 @@ export default function Profile() {
       </Card>
 
       {/* Badges & Achievements */}
-      <Card>
+      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.4s' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-display">
             <Award className="h-5 w-5" />
             Badges & Achievements
           </CardTitle>
@@ -279,9 +283,9 @@ export default function Profile() {
               <span>Progress: {badgeStats.earned}/{badgeStats.total}</span>
               <span>{badgeStats.progress}%</span>
             </div>
-            <div className="w-full bg-secondary rounded-full h-2">
+            <div className="w-full bg-secondary rounded-full h-2 progress-glow">
               <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-300" 
                 style={{ width: `${badgeStats.progress}%` }}
               ></div>
             </div>
@@ -289,11 +293,11 @@ export default function Profile() {
 
           <div className="grid grid-cols-4 gap-3">
             {badges.available.map((badge, index) => (
-              <div key={`badge-${badge.id}-${index}`} className="text-center">
-                <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl ${
+              <div key={`badge-${badge.id}`} className="text-center hover-lift">
+                <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl transition-all duration-300 ${
                   badges.earned.includes(badge.id) 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground neon-primary' 
+                    : 'bg-muted text-muted-foreground glass-border'
                 }`}>
                   {badge.id === 'scholar' && <BookOpen className="h-6 w-6" />}
                   {badge.id === 'speedster' && <Target className="h-6 w-6" />}
@@ -310,35 +314,35 @@ export default function Profile() {
           
           {/* Achievements Section */}
           <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 font-display">
               <Lightbulb className="h-5 w-5" />
               Your Achievements
             </h3>
             <div className="space-y-3">
               {achievements.map((achievement, index) => (
-                    <div 
-                      key={`achievement-${index}`}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <achievement.icon className="h-5 w-5 text-primary" />
-                        <div>
-                          <h4 className="font-medium">{achievement.title}</h4>
-                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">{achievement.points} pts</Badge>
+                <div 
+                  key={`achievement-${achievement.title}-${index}`}
+                  className="flex items-center justify-between p-3 glass-border rounded-lg hover-lift"
+                >
+                  <div className="flex items-center gap-3">
+                    <achievement.icon className="h-5 w-5 text-primary" />
+                    <div>
+                      <h4 className="font-medium">{achievement.title}</h4>
+                      <p className="text-sm text-muted-foreground">{achievement.description}</p>
                     </div>
-                  ))}
+                  </div>
+                  <Badge variant="secondary" className="glass-border">{achievement.points} pts</Badge>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.5s' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 font-display">
             <History className="h-5 w-5" />
             Recent Activity
           </CardTitle>
@@ -346,13 +350,13 @@ export default function Profile() {
         <CardContent>
           <div className="space-y-3">
             {quizHistory.slice(0, 5).map((quiz, index) => (
-              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
+              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 glass-border rounded-lg hover-lift">
                 <div>
                   <p className="font-medium">{quiz.subject}</p>
                   <p className="text-sm text-muted-foreground">{quiz.topic}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold">{quiz.score}%</p>
+                  <p className="font-bold gradient-text">{quiz.score}%</p>
                   <p className="text-sm text-muted-foreground">{quiz.difficulty}</p>
                 </div>
               </div>
@@ -366,9 +370,9 @@ export default function Profile() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent>
+        <DialogContent className="glass-card">
           <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
+            <DialogTitle className="font-display">Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -378,6 +382,7 @@ export default function Profile() {
                   variant={theme === 'light' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('light')}
+                  className={theme === 'light' ? 'btn-neon' : 'btn-glass'}
                 >
                   Light
                 </Button>
@@ -385,6 +390,7 @@ export default function Profile() {
                   variant={theme === 'dark' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('dark')}
+                  className={theme === 'dark' ? 'btn-neon' : 'btn-glass'}
                 >
                   Dark
                 </Button>
@@ -392,6 +398,7 @@ export default function Profile() {
                   variant={theme === 'system' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('system')}
+                  className={theme === 'system' ? 'btn-neon' : 'btn-glass'}
                 >
                   System
                 </Button>
@@ -399,33 +406,33 @@ export default function Profile() {
             </div>
 
             <div className="border-t pt-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
+              <h3 className="font-medium mb-3 flex items-center gap-2 font-display">
                 <Shield className="h-4 w-4" />
                 Data Management
               </h3>
               <div className="space-y-2">
-                <Button variant="outline" onClick={exportData} className="w-full justify-start">
+                <Button variant="outline" onClick={exportData} className="w-full justify-start btn-glass hover-lift">
                   <Download className="h-4 w-4 mr-2" />
                   Export Data
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-destructive">
+                    <Button variant="outline" className="w-full justify-start text-destructive btn-glass hover-lift">
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Reset All Data
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="glass-card">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Reset All Data</AlertDialogTitle>
+                      <AlertDialogTitle className="font-display">Reset All Data</AlertDialogTitle>
                       <AlertDialogDescription>
                         This action cannot be undone. This will permanently delete all your progress, quiz history, and achievements.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground">
+                      <AlertDialogCancel className="btn-glass">Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground btn-neon">
                         Reset Data
                       </AlertDialogAction>
                     </AlertDialogFooter>

@@ -22,12 +22,12 @@ interface StreamingMessage {
 }
 
 const TypingIndicator = () => (
-  <div className="flex justify-start mb-4">
-    <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+  <div className="flex justify-start mb-4 animate-slide-up">
+    <div className="glass-card rounded-lg p-3 max-w-[80%]">
       <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
       </div>
     </div>
   </div>
@@ -168,21 +168,21 @@ export default function Chat() {
   const allMessages = [...messages, ...(streamingMessage ? [streamingMessage] : [])];
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-transparent">
       {/* Header */}
-      <div className="border-b p-4 flex justify-between items-center bg-card">
+      <div className="glass-card border-b p-4 flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-xl font-semibold">AI Assistant</h1>
+          <h1 className="text-xl font-semibold font-display gradient-text">AI Assistant</h1>
           <p className="text-sm text-muted-foreground">Ask me anything!</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="hover-lift">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleClearChat} className="text-destructive">
+          <DropdownMenuContent align="end" className="glass-card">
+            <DropdownMenuItem onClick={handleClearChat} className="text-destructive hover:bg-destructive/20">
               <Trash2 className="h-4 w-4 mr-2" />
               Clear Chat
             </DropdownMenuItem>
@@ -191,12 +191,12 @@ export default function Chat() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 custom-scrollbar">
         {allMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-2">
-              <div className="text-2xl">👋</div>
-              <h3 className="text-lg font-medium">Welcome to AI Chat</h3>
+            <div className="text-center space-y-2 float-animation">
+              <div className="text-4xl mb-4">🤖</div>
+              <h3 className="text-lg font-medium font-display gradient-text">Welcome to AI Chat</h3>
               <p className="text-muted-foreground">Start a conversation by typing a message below.</p>
             </div>
           </div>
@@ -204,14 +204,14 @@ export default function Chat() {
           allMessages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex chat-message ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                 <div
-                  className={`rounded-lg p-3 ${
+                  className={`rounded-lg p-3 glass-card-hover transition-all duration-300 ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground ml-auto'
-                      : 'bg-muted'
+                      ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground ml-auto neon-primary'
+                      : 'glass-card'
                   }`}
                 >
                   {msg.role === 'assistant' ? (
@@ -227,12 +227,13 @@ export default function Chat() {
                                 style={oneDark}
                                 language={match[1]}
                                 PreTag="div"
+                                className="glass-border rounded-md"
                                 {...props}
                               >
                                 {String(children).replace(/\n$/, '')}
                               </SyntaxHighlighter>
                             ) : (
-                              <code className={className} {...props}>
+                              <code className={`${className} glass-border px-1 py-0.5 rounded text-accent`} {...props}>
                                 {children}
                               </code>
                             );
@@ -242,7 +243,7 @@ export default function Chat() {
                         {msg.content}
                       </ReactMarkdown>
                       {(msg as StreamingMessage).isStreaming && (
-                        <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />
+                        <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 neon-primary" />
                       )}
                     </div>
                   ) : (
@@ -255,10 +256,10 @@ export default function Chat() {
                     variant="ghost"
                     size="sm"
                     onClick={() => copyToClipboard(msg.content, msg.id)}
-                    className="mt-1 h-6 px-2 text-xs"
+                    className="mt-1 h-6 px-2 text-xs btn-glass hover-lift"
                   >
                     {copiedId === msg.id ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3 text-success" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}
@@ -274,7 +275,7 @@ export default function Chat() {
       </div>
 
       {/* Input */}
-      <div className="fixed bottom-16 left-0 right-0 p-4 bg-background border-t">
+      <div className="fixed bottom-16 left-0 right-0 p-4 glass-card">
         <form onSubmit={handleSubmit} className="flex gap-2 max-w-4xl mx-auto">
           <Input
             ref={inputRef}
@@ -283,9 +284,13 @@ export default function Chat() {
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 input-glass focus-enhanced"
           />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
+          <Button 
+            type="submit" 
+            disabled={isLoading || !input.trim()}
+            className="btn-neon micro-bounce"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>

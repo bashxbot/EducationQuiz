@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -308,10 +309,10 @@ export default function Quiz() {
 
   if (quizMode === 'setup') {
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
+        <Card className="glass-card glass-card-hover animate-slide-up">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-display gradient-text">
               <BookOpen className="h-5 w-5" />
               Start New Quiz
             </CardTitle>
@@ -320,12 +321,12 @@ export default function Quiz() {
             <div>
               <label className="text-sm font-medium mb-2 block">Subject</label>
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger>
+                <SelectTrigger className="input-glass focus-enhanced">
                   <SelectValue placeholder="Choose a subject" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-card">
                   {subjects.map(subject => (
-                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    <SelectItem key={subject} value={subject} className="hover:bg-primary/20">{subject}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -335,13 +336,13 @@ export default function Quiz() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Topic (Optional)</label>
                 <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                  <SelectTrigger>
+                  <SelectTrigger className="input-glass focus-enhanced">
                     <SelectValue placeholder="Choose a topic or leave for mixed" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mixed">Mixed Topics</SelectItem>
+                  <SelectContent className="glass-card">
+                    <SelectItem value="mixed" className="hover:bg-primary/20">Mixed Topics</SelectItem>
                     {topicsBySubject[selectedSubject]?.map(topic => (
-                      <SelectItem key={topic} value={topic}>{topic}</SelectItem>
+                      <SelectItem key={topic} value={topic} className="hover:bg-primary/20">{topic}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -351,13 +352,13 @@ export default function Quiz() {
             <div>
               <label className="text-sm font-medium mb-2 block">Difficulty</label>
               <Select value={selectedDifficulty} onValueChange={(value: any) => setSelectedDifficulty(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="input-glass focus-enhanced">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
+                <SelectContent className="glass-card">
+                  <SelectItem value="easy" className="hover:bg-primary/20">Easy</SelectItem>
+                  <SelectItem value="medium" className="hover:bg-primary/20">Medium</SelectItem>
+                  <SelectItem value="hard" className="hover:bg-primary/20">Hard</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -365,7 +366,7 @@ export default function Quiz() {
             <Button 
               onClick={generateQuiz} 
               disabled={!selectedSubject || isLoading}
-              className="w-full"
+              className="w-full btn-neon micro-bounce"
             >
               {isLoading ? 'Generating Quiz...' : 'Start Quiz'}
             </Button>
@@ -376,7 +377,11 @@ export default function Quiz() {
   }
 
   if (!questions.length) {
-    return <div className="p-4">Loading...</div>;
+    return (
+      <div className="p-4 flex items-center justify-center min-h-[50vh]">
+        <div className="loading-shimmer w-full h-32 rounded-lg"></div>
+      </div>
+    );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -388,17 +393,17 @@ export default function Quiz() {
     );
 
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
+        <Card className="glass-card glass-card-hover animate-slide-up neon-primary">
           <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
+            <CardTitle className="flex items-center justify-center gap-2 font-display gradient-text">
               <Trophy className="h-5 w-5" />
               Quiz Complete!
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary mb-2">
+            <div className="text-center float-animation">
+              <div className="text-4xl font-bold text-primary mb-2 font-display neon-text">
                 {quizResults?.score}%
               </div>
               <p className="text-muted-foreground">
@@ -410,32 +415,32 @@ export default function Quiz() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{quizResults?.correctCount}</div>
+              <div className="text-center p-4 glass-border rounded-lg hover-lift">
+                <div className="text-2xl font-bold text-green-600 font-display neon-text">{quizResults?.correctCount}</div>
                 <div className="text-sm text-green-700 dark:text-green-300">Correct</div>
               </div>
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">{wrongQuestions.length}</div>
+              <div className="text-center p-4 glass-border rounded-lg hover-lift">
+                <div className="text-2xl font-bold text-red-600 font-display neon-text">{wrongQuestions.length}</div>
                 <div className="text-sm text-red-700 dark:text-red-300">Wrong</div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button onClick={startReview} variant="outline">
+              <Button onClick={startReview} variant="outline" className="btn-glass hover-lift">
                 Review Answers
               </Button>
-              <Button onClick={resetQuiz} variant="outline">
+              <Button onClick={resetQuiz} variant="outline" className="btn-glass hover-lift">
                 New Quiz
               </Button>
             </div>
 
             {wrongQuestions.length > 0 && (
-              <Button onClick={retryWrongOnly} className="w-full">
+              <Button onClick={retryWrongOnly} className="w-full btn-neon micro-bounce">
                 Retry Wrong Questions ({wrongQuestions.length})
               </Button>
             )}
 
-            <Button onClick={() => generateQuiz()} className="w-full">
+            <Button onClick={() => generateQuiz()} className="w-full btn-neon micro-bounce">
               Try Again
             </Button>
           </CardContent>
@@ -449,18 +454,18 @@ export default function Quiz() {
     const isCorrect = userAnswer === currentQuestion.correctAnswer;
 
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
+        <Card className="glass-card glass-card-hover animate-slide-up">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-lg font-display">
                 Review {currentQuestionIndex + 1} of {questions.length}
               </CardTitle>
-              <Badge variant={isCorrect ? "default" : "destructive"}>
+              <Badge variant={isCorrect ? "default" : "destructive"} className="glass-border">
                 {isCorrect ? "Correct" : "Wrong"}
               </Badge>
             </div>
-            <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} />
+            <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} className="progress-glow" />
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -474,28 +479,28 @@ export default function Quiz() {
                 const isUserAnswer = option === userAnswer;
                 const isCorrectAnswer = option === currentQuestion.correctAnswer;
 
-                let variant: "outline" | "default" | "destructive" = "outline";
-                if (isCorrectAnswer) variant = "default";
-                else if (isUserAnswer && !isCorrect) variant = "destructive";
+                let className = "w-full justify-start text-left h-auto p-3 btn-glass hover-lift";
+                if (isCorrectAnswer) className += " neon-accent";
+                else if (isUserAnswer && !isCorrect) className += " border-destructive";
 
                 return (
                   <Button
                     key={index}
-                    variant={variant}
-                    className="w-full justify-start text-left h-auto p-3"
+                    variant="outline"
+                    className={className}
                     disabled
                   >
                     <span className="flex-1">{option}</span>
-                    {isUserAnswer && <Badge variant="secondary" className="ml-2">Your Answer</Badge>}
-                    {isCorrectAnswer && <Badge variant="default" className="ml-2">Correct</Badge>}
+                    {isUserAnswer && <Badge variant="secondary" className="ml-2 glass-border">Your Answer</Badge>}
+                    {isCorrectAnswer && <Badge variant="default" className="ml-2 neon-accent">Correct</Badge>}
                   </Button>
                 );
               })}
             </div>
 
-            <Card className="bg-muted/50">
+            <Card className="glass-border">
               <CardContent className="p-4">
-                <h4 className="font-medium mb-2">Explanation:</h4>
+                <h4 className="font-medium mb-2 font-display">Explanation:</h4>
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                     {currentQuestion.explanation}
@@ -509,16 +514,17 @@ export default function Quiz() {
                 onClick={prevQuestion} 
                 disabled={currentQuestionIndex === 0}
                 variant="outline"
+                className="btn-glass hover-lift"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
               {currentQuestionIndex === questions.length - 1 ? (
-                <Button onClick={resetQuiz}>
+                <Button onClick={resetQuiz} className="btn-neon">
                   Finish Review
                 </Button>
               ) : (
-                <Button onClick={nextQuestion}>
+                <Button onClick={nextQuestion} className="btn-neon">
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
@@ -531,12 +537,12 @@ export default function Quiz() {
   }
 
   return (
-    <div className="p-4 space-y-6 pb-20">
-      <Card>
+    <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
+      <Card className="glass-card glass-card-hover animate-slide-up">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-lg">
+              <CardTitle className="text-lg font-display gradient-text">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </CardTitle>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
@@ -547,14 +553,14 @@ export default function Quiz() {
                 <div>{selectedSubject}: {selectedTopic === 'mixed' || !selectedTopic ? 'Mixed Topics' : selectedTopic}</div>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={resetQuiz}>
+            <Button variant="ghost" size="sm" onClick={resetQuiz} className="hover-lift">
               Exit
             </Button>
           </div>
-          <Progress value={progress} className="mt-2" />
+          <Progress value={progress} className="mt-2 progress-glow" />
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="prose prose-sm max-w-none dark:prose-invert glass-border p-4 rounded-lg">
             <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
               {currentQuestion.question}
             </ReactMarkdown>
@@ -566,7 +572,11 @@ export default function Quiz() {
                 key={index}
                 variant={selectedAnswer === option ? "default" : "outline"}
                 onClick={() => selectAnswer(option)}
-                className="w-full justify-start text-left h-auto p-3"
+                className={`w-full justify-start text-left h-auto p-3 transition-all duration-300 ${
+                  selectedAnswer === option 
+                    ? 'btn-neon neon-primary' 
+                    : 'btn-glass hover-lift'
+                }`}
               >
                 {option}
               </Button>
@@ -578,6 +588,7 @@ export default function Quiz() {
               onClick={prevQuestion} 
               disabled={currentQuestionIndex === 0}
               variant="outline"
+              className="btn-glass hover-lift"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
@@ -585,6 +596,7 @@ export default function Quiz() {
             <Button 
               onClick={nextQuestion} 
               disabled={!selectedAnswer}
+              className="btn-neon micro-bounce"
             >
               {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
               <ChevronRight className="h-4 w-4 ml-1" />
