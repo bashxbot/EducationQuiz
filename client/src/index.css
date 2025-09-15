@@ -143,8 +143,9 @@ body::before {
 @layer components {
   /* Premium Card System */
   .premium-card {
-    @apply backdrop-blur-xl border border-border/50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300;
+    @apply backdrop-blur-xl border rounded-xl shadow-lg hover:shadow-xl transition-all duration-300;
     background: var(--card);
+    border-color: var(--border);
     position: relative;
     z-index: 1;
   }

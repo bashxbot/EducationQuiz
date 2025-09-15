@@ -128,15 +128,15 @@ export function resetAppData() {
 // Storage hooks
 export function useUserProfile() {
   const defaultProfile: UserProfile = {
-    id: "",
-    name: "",
-    email: "",
-    class: "",
-    school: "",
-    profilePicture: "", // Added default for profilePicture
-    totalPoints: 0, // Added default for totalPoints
-    currentStreak: 0, // Added default for currentStreak
-    joinDate: new Date().toISOString(), // Added default for joinDate
+    id: "demo-user",
+    name: "Alex Kumar",
+    email: "alex@school.edu",
+    class: "Class 10",
+    school: "Excellence High School",
+    profilePicture: "",
+    totalPoints: 1240,
+    currentStreak: 7,
+    joinDate: new Date("2024-03-01").toISOString(),
   };
 
   const [profile, setProfile] = useState<UserProfile>(() => 

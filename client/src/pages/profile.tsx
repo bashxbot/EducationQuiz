@@ -49,6 +49,18 @@ export default function Profile() {
   const [editedProfile, setEditedProfile] = useState(profile);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Add loading check
+  if (!profile || !quizHistory || !reasoningProgress) { // Added checks for quizHistory and reasoningProgress as they are crucial for stats
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Safe badge data object with proper defaults
   const badgeData = {
     totalQuizzes: quizHistory?.length || 0,

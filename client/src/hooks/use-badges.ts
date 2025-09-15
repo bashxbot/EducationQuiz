@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Target, Trophy, Flame } from "lucide-react";
 
@@ -137,7 +136,7 @@ export function useAutoAchievements(data?: BadgeData) {
 
   useEffect(() => {
     if (!data) return;
-    
+
     const newBadges = checkAndAwardBadges(data);
     if (newBadges.length > 0) {
       console.log('New badges earned:', newBadges.map(b => b.name));
