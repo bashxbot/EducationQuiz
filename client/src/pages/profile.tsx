@@ -299,8 +299,7 @@ export default function Profile() {
                   {badge.id === 'speedster' && <Target className="h-6 w-6" />}
                   {badge.id === 'perfectionist' && <Star className="h-6 w-6" />}
                   {badge.id === 'streaker' && <Flame className="h-6 w-6" />}
-                  {badge.id === 'quiz-master' && <Trophy className="h-6 w-6" />}
-                  {!['scholar', 'speedster', 'perfectionist', 'streaker', 'quiz-master'].includes(badge.id) && <Medal className="h-6 w-6" />}
+                  {!['scholar', 'speedster', 'perfectionist', 'streaker'].includes(badge.id) && <Medal className="h-6 w-6" />}
                 </div>
                 <p className="text-xs font-medium">{badge.name}</p>
                 <p className="text-xs text-muted-foreground">{badge.description}</p>
