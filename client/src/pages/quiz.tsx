@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -96,7 +95,7 @@ export default function Quiz() {
       });
 
       if (!response.ok) throw new Error('Failed to generate quiz');
-      
+
       const quiz = await response.json();
       setQuestions(quiz.questions);
       setUserAnswers(new Array(quiz.questions.length).fill(''));
@@ -105,7 +104,7 @@ export default function Quiz() {
       setQuizMode('quiz');
     } catch (error) {
       console.error('Quiz generation error:', error);
-      // Fallback sample questions
+      // Use fallback sample questions to keep app functional
       const sampleQuestions: QuizQuestion[] = [
         {
           id: '1',
@@ -131,6 +130,8 @@ export default function Quiz() {
       setCurrentQuestionIndex(0);
       setTimer(0);
       setQuizMode('quiz');
+      // Show a non-blocking notification instead of alert
+      console.warn('Using fallback questions due to API error');
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +174,7 @@ export default function Quiz() {
     };
 
     setQuizResults(results);
-    
+
     // Save to history
     addQuizResult({
       subject: selectedSubject,
@@ -384,12 +385,12 @@ export default function Quiz() {
                 {currentQuestion.question}
               </ReactMarkdown>
             </div>
-            
+
             <div className="space-y-2">
               {currentQuestion.options.map((option, index) => {
                 const isUserAnswer = option === userAnswer;
                 const isCorrectAnswer = option === currentQuestion.correctAnswer;
-                
+
                 let variant: "outline" | "default" | "destructive" = "outline";
                 if (isCorrectAnswer) variant = "default";
                 else if (isUserAnswer && !isCorrect) variant = "destructive";
@@ -475,7 +476,7 @@ export default function Quiz() {
               {currentQuestion.question}
             </ReactMarkdown>
           </div>
-          
+
           <div className="space-y-2">
             {currentQuestion.options.map((option, index) => (
               <Button

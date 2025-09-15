@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,255 +38,242 @@ import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData } fr
 import { useBadges, useAutoAchievements } from "@/hooks/use-badges";
 import { useTheme } from "@/lib/theme";
 
-interface EditableFieldProps {
-  label: string;
-  value: string;
-  onSave: (value: string) => void;
-  type?: "text" | "email" | "password";
-  multiline?: boolean;
-}
-
-function EditableField({ label, value, onSave, type = "text", multiline = false }: EditableFieldProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
-
-  const handleSave = () => {
-    onSave(editValue);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditValue(value);
-    setIsEditing(false);
-  };
-
-  if (isEditing) {
-    return (
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-muted-foreground">{label}</label>
-        <div className="flex gap-2">
-          {multiline ? (
-            <Textarea
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              className="flex-1"
-              data-testid={`input-${label.toLowerCase().replace(' ', '-')}`}
-            />
-          ) : (
-            <Input
-              type={type}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              className="flex-1"
-              data-testid={`input-${label.toLowerCase().replace(' ', '-')}`}
-            />
-          )}
-          <Button 
-            size="sm" 
-            onClick={handleSave}
-            data-testid={`button-save-${label.toLowerCase().replace(' ', '-')}`}
-          >
-            <Save className="h-4 w-4" />
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={handleCancel}
-            data-testid={`button-cancel-${label.toLowerCase().replace(' ', '-')}`}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <label className="text-sm font-medium text-muted-foreground">{label}</label>
-        <p className="text-sm" data-testid={`text-${label.toLowerCase().replace(' ', '-')}`}>
-          {type === "password" ? "••••••••" : value}
-        </p>
-      </div>
-      <Button 
-        size="sm" 
-        variant="ghost" 
-        onClick={() => setIsEditing(true)}
-        data-testid={`button-edit-${label.toLowerCase().replace(' ', '-')}`}
-      >
-        <Edit3 className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-}
-
 export default function Profile() {
   const { profile, updateProfile } = useUserProfile();
-  const { history, getAverageScore, getSubjectStats } = useQuizHistory();
-  const { getAllBadgeDefinitions, badges } = useBadges();
-  const { progress: reasoningProgress } = useReasoningProgress();
+  const { quizHistory } = useQuizHistory();
+  const { reasoningProgress } = useReasoningProgress();
+  const { badges } = useBadges();
   const { theme, setTheme } = useTheme();
   
-  const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState(profile);
+  const [showSettings, setShowSettings] = useState(false);
 
-  const totalQuizzes = history.length;
-  const averageScore = getAverageScore();
-  const subjectStats = getSubjectStats();
+  // Auto-trigger achievements
+  useAutoAchievements();
 
-  // Auto-check achievements with current data
-  useAutoAchievements({
-    totalQuizzes,
-    history,
-    totalPoints: profile.totalPoints,
-    currentStreak: reasoningProgress.currentStreak,
-    reasoningAccuracy: reasoningProgress.accuracyRate,
-  });
+  // Calculate stats
+  const totalQuizzes = quizHistory.length;
+  const averageScore = totalQuizzes > 0 
+    ? Math.round(quizHistory.reduce((sum, quiz) => sum + quiz.score, 0) / totalQuizzes)
+    : 0;
+  const totalReasoningChallenges = reasoningProgress.length;
+  const reasoningAccuracy = totalReasoningChallenges > 0
+    ? Math.round((reasoningProgress.filter(r => r.correct).length / totalReasoningChallenges) * 100)
+    : 0;
 
-  const motivationalMessages = [
-    "Great progress! Keep learning every day!",
-    `You've completed ${totalQuizzes} quizzes. Challenge yourself with a new subject!`,
-    "Your consistency is impressive! Try a harder difficulty level.",
-    `${reasoningProgress.currentStreak} day streak! You're building great habits!`,
-    "Learning is a journey, not a destination. Keep exploring!",
-  ];
-
-  const todayMessage = motivationalMessages[new Date().getDay() % motivationalMessages.length];
-
-  const allBadges = getAllBadgeDefinitions();
-
-  const resetProgress = () => {
-    // Clear only app-specific data, not all localStorage
-    resetAppData();
-    window.location.reload();
+  const handleSaveProfile = () => {
+    updateProfile(editedProfile);
+    setIsEditing(false);
   };
 
-  const downloadData = () => {
+  const handleCancelEdit = () => {
+    setEditedProfile(profile);
+    setIsEditing(false);
+  };
+
+  const handleResetData = () => {
+    resetAppData();
+    setEditedProfile({
+      name: "Anonymous User",
+      email: "",
+      class: "",
+      school: "",
+      totalPoints: 0,
+      currentStreak: 0
+    });
+  };
+
+  const exportData = () => {
     const data = {
       profile,
-      history,
-      badges,
+      quizHistory,
       reasoningProgress,
-      exportDate: new Date().toISOString(),
+      badges: badges.earned,
+      exportDate: new Date().toISOString()
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `eduapp-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = 'study-buddy-data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  // Badge statistics
+  const badgeStats = {
+    total: badges.available.length,
+    earned: badges.earned.length,
+    progress: Math.round((badges.earned.length / badges.available.length) * 100)
+  };
+
   return (
     <div className="p-4 space-y-6 pb-20">
-      {/* User Profile Header */}
+      {/* Profile Header */}
       <Card>
-        <CardContent className="p-6 text-center">
-          <div className="relative mb-4">
-            <div className="w-20 h-20 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl font-bold text-white" data-testid="text-user-initials">
-                {profile.name.split(' ').map(n => n[0]).join('')}
-              </span>
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {profile.name?.charAt(0) || 'A'}
+              </div>
+              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0">
+                <Camera className="h-4 w-4" />
+              </Button>
             </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="absolute -bottom-1 -right-1 rounded-full p-2"
-              data-testid="button-change-picture"
-            >
-              <Camera className="h-3 w-3" />
+            
+            <div className="flex-1">
+              {isEditing ? (
+                <div className="space-y-3">
+                  <Input
+                    value={editedProfile.name}
+                    onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Full Name"
+                  />
+                  <Input
+                    value={editedProfile.email}
+                    onChange={(e) => setEditedProfile(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="Email"
+                    type="email"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={editedProfile.class}
+                      onChange={(e) => setEditedProfile(prev => ({ ...prev, class: e.target.value }))}
+                      placeholder="Class"
+                    />
+                    <Input
+                      value={editedProfile.school}
+                      onChange={(e) => setEditedProfile(prev => ({ ...prev, school: e.target.value }))}
+                      placeholder="School"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSaveProfile}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-bold">{profile.name}</h2>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground text-sm">{profile.email}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {profile.class} • {profile.school}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
+              <Settings className="h-4 w-4" />
             </Button>
           </div>
-          <h2 className="text-xl font-bold mb-1" data-testid="text-user-name">
-            {profile.name}
-          </h2>
-          <p className="text-muted-foreground text-sm mb-3" data-testid="text-user-details">
-            {profile.class} • {profile.school}
-          </p>
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4 text-primary" />
-              <span data-testid="text-join-date">
-                Joined {new Date(profile.joinDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Trophy className="h-4 w-4 text-accent" />
-              <span data-testid="text-user-rank">Rank #{Math.floor(profile.totalPoints / 50) + 1}</span>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Motivational Message */}
-      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center gap-2">
-            <Lightbulb className="h-4 w-4 text-accent" />
-            <p className="text-sm font-medium" data-testid="text-motivation">
-              {todayMessage}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Target className="h-5 w-5 text-primary" />
+              <div className="text-2xl font-bold text-primary">{profile.totalPoints}</div>
+            </div>
+            <p className="text-sm text-muted-foreground">Total Points</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Flame className="h-5 w-5 text-orange-500" />
+              <div className="text-2xl font-bold text-orange-500">{profile.currentStreak}</div>
+            </div>
+            <p className="text-sm text-muted-foreground">Day Streak</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Editable Profile Information */}
+      {/* Academic Performance */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <UserPen className="h-5 w-5 text-primary" />
-            Profile Information
+            <Trophy className="h-5 w-5" />
+            Academic Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <EditableField
-            label="Full Name"
-            value={profile.name}
-            onSave={(value) => updateProfile({ name: value })}
-          />
-          <EditableField
-            label="Email"
-            value={profile.email}
-            onSave={(value) => updateProfile({ email: value })}
-            type="email"
-          />
-          <EditableField
-            label="Class/Year"
-            value={profile.class}
-            onSave={(value) => updateProfile({ class: value })}
-          />
-          <EditableField
-            label="School/College"
-            value={profile.school}
-            onSave={(value) => updateProfile({ school: value })}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-secondary rounded-lg">
+              <div className="text-lg font-bold">{totalQuizzes}</div>
+              <p className="text-sm text-muted-foreground">Quizzes Completed</p>
+            </div>
+            <div className="text-center p-3 bg-secondary rounded-lg">
+              <div className="text-lg font-bold">{averageScore}%</div>
+              <p className="text-sm text-muted-foreground">Average Score</p>
+            </div>
+            <div className="text-center p-3 bg-secondary rounded-lg">
+              <div className="text-lg font-bold">{totalReasoningChallenges}</div>
+              <p className="text-sm text-muted-foreground">Reasoning Challenges</p>
+            </div>
+            <div className="text-center p-3 bg-secondary rounded-lg">
+              <div className="text-lg font-bold">{reasoningAccuracy}%</div>
+              <p className="text-sm text-muted-foreground">Reasoning Accuracy</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Achievement Badges */}
+      {/* Badges & Achievements */}
       <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Medal className="h-5 w-5 text-accent" />
-            Achievement Badges
-          </h3>
-          <div className="grid grid-cols-3 gap-4">
-            {allBadges.map((badge) => (
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="h-5 w-5" />
+            Badges & Achievements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-2">
+              <span>Progress: {badgeStats.earned}/{badgeStats.total}</span>
+              <span>{badgeStats.progress}%</span>
+            </div>
+            <div className="w-full bg-secondary rounded-full h-2">
               <div 
-                key={badge.type} 
-                className={`text-center ${!badge.earned ? 'opacity-50' : ''}`}
-                data-testid={`badge-${badge.type}`}
-              >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${
-                  badge.earned 
-                    ? badge.color
-                    : 'bg-muted'
+                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${badgeStats.progress}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-4 gap-3">
+            {badges.available.map((badge, index) => (
+              <div key={`badge-${badge.id}-${index}`} className="text-center">
+                <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl ${
+                  badges.earned.includes(badge.id) 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
                 }`}>
-                  <badge.icon className="h-5 w-5" />
+                  {badge.id === 'scholar' && <BookOpen className="h-6 w-6" />}
+                  {badge.id === 'speedster' && <Target className="h-6 w-6" />}
+                  {badge.id === 'perfectionist' && <Star className="h-6 w-6" />}
+                  {badge.id === 'streaker' && <Flame className="h-6 w-6" />}
+                  {!['scholar', 'speedster', 'perfectionist', 'streaker'].includes(badge.id) && <Medal className="h-6 w-6" />}
                 </div>
                 <p className="text-xs font-medium">{badge.name}</p>
                 <p className="text-xs text-muted-foreground">{badge.description}</p>
@@ -295,255 +283,107 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Statistics */}
+      {/* Recent Activity */}
       <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-accent" />
-            Learning Statistics
-          </h3>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1" data-testid="text-total-quizzes">
-                {totalQuizzes}
-              </div>
-              <p className="text-xs text-muted-foreground">Total Quizzes</p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-success mb-1" data-testid="text-average-score">
-                {averageScore}%
-              </div>
-              <p className="text-xs text-muted-foreground">Avg Score</p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1" data-testid="text-total-points">
-                {profile.totalPoints}
-              </div>
-              <p className="text-xs text-muted-foreground">Total Points</p>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-warning mb-1" data-testid="text-current-streak">
-                {reasoningProgress.currentStreak}
-              </div>
-              <p className="text-xs text-muted-foreground">Day Streak</p>
-            </div>
-          </div>
-          
-          {/* Subject Progress */}
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-3">
-            <h4 className="font-medium">Subject Performance</h4>
-            {subjectStats.map((subject, index) => (
-              <div key={`${subject.subject}-${index}`} className="flex items-center justify-between">
-                <span className="text-sm font-medium">{subject.subject}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-secondary rounded-full">
-                    <div 
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${subject.averageScore}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-xs text-muted-foreground" data-testid={`progress-${subject.subject.toLowerCase()}`}>
-                    {subject.averageScore}% ({subject.count})
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quiz History */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
-            Recent Quiz History
-          </h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {history.slice(0, 10).map((quiz) => (
-              <div key={quiz.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    quiz.score >= 80 ? 'bg-success' : quiz.score >= 60 ? 'bg-warning' : 'bg-destructive'
-                  }`}>
-                    <span className="text-white text-sm">
-                      {quiz.score >= 80 ? '✓' : quiz.score >= 60 ? '!' : '✗'}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">
-                      {quiz.subject}: {quiz.topic || 'Mixed Topics'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(quiz.completedAt).toLocaleDateString()} • {quiz.totalQuestions} questions
-                    </p>
-                  </div>
+            {quizHistory.slice(0, 5).map((quiz, index) => (
+              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
+                <div>
+                  <p className="font-medium">{quiz.subject}</p>
+                  <p className="text-sm text-muted-foreground">{quiz.topic}</p>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${
-                    quiz.score >= 80 ? 'text-success' : quiz.score >= 60 ? 'text-warning' : 'text-destructive'
-                  }`} data-testid={`score-${quiz.id}`}>
-                    {quiz.score}%
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedQuiz(quiz)}
-                    data-testid={`button-review-${quiz.id}`}
-                  >
-                    Review
-                  </Button>
+                  <p className="font-bold">{quiz.score}%</p>
+                  <p className="text-xs text-muted-foreground">{quiz.difficulty}</p>
                 </div>
               </div>
             ))}
+            {quizHistory.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">No recent activity</p>
+            )}
           </div>
-          {history.length > 10 && (
-            <Button variant="outline" className="w-full mt-4" data-testid="button-view-all-history">
-              View All History ({history.length} quizzes)
-            </Button>
-          )}
         </CardContent>
       </Card>
 
-      {/* Settings */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-            Settings & Preferences
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5 text-primary" />
-                <span className="text-sm">Dark Mode</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                data-testid="button-toggle-theme"
-              >
-                {theme === "light" ? "Enable" : "Disable"}
-              </Button>
-            </div>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between" data-testid="button-change-password">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <span className="text-sm">Change Password</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">→</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Change Password</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input type="password" placeholder="Current Password" />
-                  <Input type="password" placeholder="New Password" />
-                  <Input type="password" placeholder="Confirm New Password" />
-                  <Button className="w-full">Update Password</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Button 
-              variant="ghost" 
-              className="w-full justify-between" 
-              onClick={downloadData}
-              data-testid="button-download-data"
-            >
-              <div className="flex items-center gap-3">
-                <Download className="h-5 w-5 text-primary" />
-                <span className="text-sm">Download My Data</span>
-              </div>
-              <span className="text-xs text-muted-foreground">→</span>
-            </Button>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+      {/* Settings Dialog */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Theme</label>
+              <div className="grid grid-cols-3 gap-2">
                 <Button 
-                  variant="ghost" 
-                  className="w-full justify-between text-destructive hover:text-destructive hover:bg-destructive/10"
-                  data-testid="button-reset-progress"
+                  variant={theme === 'light' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setTheme('light')}
                 >
-                  <div className="flex items-center gap-3">
-                    <RotateCcw className="h-5 w-5" />
-                    <span className="text-sm">Reset All Progress</span>
-                  </div>
-                  <span className="text-xs">→</span>
+                  Light
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Reset All Progress?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete all your quiz history, badges, and progress. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={resetProgress} className="bg-destructive hover:bg-destructive/90">
-                    Reset Everything
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button 
-              variant="ghost" 
-              className="w-full justify-between text-destructive hover:text-destructive hover:bg-destructive/10" 
-              data-testid="button-sign-out"
-            >
-              <div className="flex items-center gap-3">
-                <LogOut className="h-5 w-5" />
-                <span className="text-sm">Sign Out</span>
-              </div>
-              <span className="text-xs">→</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quiz Review Dialog */}
-      {selectedQuiz && (
-        <Dialog open={!!selectedQuiz} onOpenChange={() => setSelectedQuiz(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Quiz Review</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="font-semibold">{selectedQuiz.subject}: {selectedQuiz.topic || 'Mixed Topics'}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {new Date(selectedQuiz.completedAt).toLocaleDateString()}
-                </p>
-                <div className="text-3xl font-bold text-primary mt-2">
-                  {selectedQuiz.score}%
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {Math.round((selectedQuiz.score / 100) * selectedQuiz.totalQuestions)} out of {selectedQuiz.totalQuestions} correct
-                </p>
-              </div>
-              <div className="text-center">
-                <Badge 
-                  variant={selectedQuiz.score >= 80 ? "default" : selectedQuiz.score >= 60 ? "secondary" : "destructive"}
-                  className="text-lg px-4 py-2"
+                <Button 
+                  variant={theme === 'dark' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setTheme('dark')}
                 >
-                  {selectedQuiz.score >= 80 ? "Excellent!" : selectedQuiz.score >= 60 ? "Good Job!" : "Keep Practicing!"}
-                </Badge>
+                  Dark
+                </Button>
+                <Button 
+                  variant={theme === 'system' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setTheme('system')}
+                >
+                  System
+                </Button>
               </div>
-              <Button onClick={() => setSelectedQuiz(null)} className="w-full">
-                Close
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-3 flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Data Management
+              </h3>
+              <div className="space-y-2">
+                <Button variant="outline" onClick={exportData} className="w-full justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Data
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-destructive">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset All Data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset All Data</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete all your progress, quiz history, and achievements.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetData} className="bg-destructive text-destructive-foreground">
+                        Reset Data
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

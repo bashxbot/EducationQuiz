@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { z } from 'zod';
 import { generateQuiz, generateChat, generateReasoning } from './services/gemini';
@@ -80,7 +79,7 @@ router.put('/api/user', (req, res) => {
 router.get('/api/progress', (req, res) => {
   res.json({
     totalQuizzes: quizHistory.length,
-    averageScore: quizHistory.length > 0 
+    averageScore: quizHistory.length > 0
       ? Math.round(quizHistory.reduce((sum, quiz) => sum + quiz.score, 0) / quizHistory.length)
       : 0,
     subjectsStudied: Array.from(new Set(quizHistory.map(q => q.subject))).length,
@@ -106,9 +105,9 @@ router.get('/api/badges', (req, res) => {
 router.post('/api/quiz/generate', async (req, res) => {
   try {
     const { class: className, subject, topic, difficulty, count = 10 } = req.body;
-    
+
     console.log('Generating quiz:', { className, subject, topic, difficulty, count });
-    
+
     const quiz = await generateQuiz({
       class: className,
       subject,
@@ -116,16 +115,16 @@ router.post('/api/quiz/generate', async (req, res) => {
       difficulty,
       count
     });
-    
+
     if (!quiz || !quiz.questions) {
       throw new Error('Invalid quiz generated');
     }
-    
+
     res.json(quiz);
   } catch (error) {
     console.error('Quiz generation error:', error);
-    
-    // Fallback quiz data
+
+    // Fallback quiz data to prevent app crashes
     const fallbackQuiz = {
       id: Date.now().toString(),
       questions: [
@@ -158,14 +157,14 @@ router.post('/api/quiz/generate', async (req, res) => {
         }
       ]
     };
-    
+
     res.json(fallbackQuiz);
   }
 });
 
 router.post('/api/quiz/submit', (req, res) => {
   const { quizId, answers, subject, topic, difficulty, timeSpent } = req.body;
-  
+
   const score = Math.floor(Math.random() * 40) + 60; // Random score between 60-100
   const result = {
     id: Date.now().toString(),
@@ -178,22 +177,22 @@ router.post('/api/quiz/submit', (req, res) => {
     timeSpent: timeSpent || 120,
     completedAt: new Date().toISOString()
   };
-  
+
   quizHistory.unshift(result);
-  
+
   // Update user points
   const user = users.find(u => u.id === 'demo-user');
   if (user) {
     user.totalPoints += Math.max(score - 50, 0);
   }
-  
+
   res.json(result);
 });
 
 // Chat routes
 router.post('/api/chat/stream', async (req, res) => {
   const { content } = req.body;
-  
+
   if (!content?.trim()) {
     return res.status(400).json({ error: 'Content is required' });
   }
@@ -205,24 +204,24 @@ router.post('/api/chat/stream', async (req, res) => {
 
   try {
     const response = await generateChat(content);
-    
+
     // Simulate streaming by sending the response word by word
     const words = response.split(' ');
-    
+
     for (let i = 0; i < words.length; i++) {
       const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
       res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
-      
+
       // Small delay to simulate streaming
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    
+
     res.write(`data: [DONE]\n\n`);
     res.end();
   } catch (error) {
     console.error('Chat streaming error:', error);
-    res.write(`data: ${JSON.stringify({ 
-      content: "I'm having trouble connecting right now. Please try again later." 
+    res.write(`data: ${JSON.stringify({
+      content: "I'm having trouble connecting right now. Please try again later."
     })}\n\n`);
     res.write(`data: [DONE]\n\n`);
     res.end();
@@ -232,32 +231,32 @@ router.post('/api/chat/stream', async (req, res) => {
 // Leaderboard routes
 router.get('/api/leaderboard', (req, res) => {
   const { subject, timeframe, scope } = req.query;
-  
+
   // Filter and sort leaderboard based on query parameters
   let filteredData = [...leaderboardData];
-  
+
   if (subject && subject !== 'All Subjects') {
     // In a real app, filter by subject performance
   }
-  
+
   if (scope === 'school') {
-    filteredData = filteredData.filter(user => 
+    filteredData = filteredData.filter(user =>
       user.school === 'Excellence High School' || user.id === 'demo-user'
     );
   } else if (scope === 'class') {
-    filteredData = filteredData.filter(user => 
+    filteredData = filteredData.filter(user =>
       user.class === 'Class 10' || user.id === 'demo-user'
     );
   }
-  
+
   // Sort by points
   filteredData.sort((a, b) => b.totalPoints - a.totalPoints);
-  
+
   // Update ranks
   filteredData.forEach((user, index) => {
     user.rank = index + 1;
   });
-  
+
   res.json({
     leaderboard: filteredData,
     userRank: filteredData.find(u => u.id === 'demo-user')?.rank || null
@@ -271,24 +270,25 @@ router.get('/api/reasoning/history', (req, res) => {
 
 router.post('/api/reasoning/generate', async (req, res) => {
   const { difficulty, category } = req.body;
-  
+
   try {
     const challenge = await generateReasoning({ difficulty, category });
     res.json(challenge);
   } catch (error) {
     console.error('Reasoning generation error:', error);
-    
-    // Fallback reasoning challenge
+
+    // Fallback reasoning challenge to prevent app crashes
     const fallbackChallenge = {
       id: Date.now().toString(),
       question: "If all roses are flowers and some flowers are red, which of the following must be true?",
       answer: "Some roses might be red",
+      explanation: "This is a logical reasoning problem. While we know all roses are flowers, and some flowers are red, we cannot conclude that all roses are red or that no roses are red. The only logical conclusion is that some roses might be red.",
       difficulty: difficulty || 'medium',
       category: category || 'logic',
       points: difficulty === 'easy' ? 10 : difficulty === 'hard' ? 30 : 20,
       createdAt: new Date().toISOString()
     };
-    
+
     res.json(fallbackChallenge);
   }
 });
@@ -296,10 +296,10 @@ router.post('/api/reasoning/generate', async (req, res) => {
 router.post('/api/reasoning/:challengeId/submit', (req, res) => {
   const { challengeId } = req.params;
   const { answer } = req.body;
-  
+
   // Mock evaluation logic
   const isCorrect = Math.random() > 0.3; // 70% chance of being correct for demo
-  
+
   const result = {
     challengeId,
     userAnswer: answer,
@@ -307,14 +307,14 @@ router.post('/api/reasoning/:challengeId/submit', (req, res) => {
     answer: "Some roses might be red", // Mock correct answer
     points: isCorrect ? 20 : 0
   };
-  
+
   if (isCorrect) {
     const user = users.find(u => u.id === 'demo-user');
     if (user) {
       user.totalPoints += result.points;
     }
   }
-  
+
   // Add to history
   reasoningHistory.unshift({
     id: Date.now().toString(),
@@ -323,7 +323,7 @@ router.post('/api/reasoning/:challengeId/submit', (req, res) => {
     correct: isCorrect,
     completedAt: new Date().toISOString()
   });
-  
+
   res.json(result);
 });
 
