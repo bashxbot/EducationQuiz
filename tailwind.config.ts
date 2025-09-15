@@ -90,6 +90,13 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float": "float 6s ease-in-out infinite",
+        "glow": "glow 2s ease-in-out infinite alternate",
+        "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "bounce-slow": "bounce 3s infinite",
+        "scale-in": "scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-up": "slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+        "fade-in": "fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },
