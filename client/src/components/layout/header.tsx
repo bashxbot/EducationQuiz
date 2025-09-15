@@ -1,21 +1,20 @@
 
 import { useTheme } from "@/lib/theme";
-import { Moon, Sun, Zap } from "lucide-react";
+import { Moon, Sun, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-50 neon-card border-b border-primary/20 px-4 py-3 flex items-center justify-between backdrop-blur-xl">
+    <header className="sticky top-0 z-50 modern-card border-b border-border px-4 py-3 flex items-center justify-between backdrop-blur-sm bg-background/95">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center relative">
-          <Zap className="text-black h-6 w-6" />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-lg opacity-50 blur-sm"></div>
+        <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center shadow-soft">
+          <GraduationCap className="text-white h-6 w-6" />
         </div>
         <div>
-          <h1 className="font-heading font-bold text-xl gradient-text">NeoLearn</h1>
-          <p className="text-xs text-muted-foreground font-body">Neural Education System</p>
+          <h1 className="font-heading font-bold text-xl gradient-text">EduLearn</h1>
+          <p className="text-xs text-muted-foreground font-body">Smart Learning Platform</p>
         </div>
       </div>
       <Button

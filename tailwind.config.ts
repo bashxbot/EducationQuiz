@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -46,12 +47,6 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
-        neon: {
-          green: "#00ff88",
-          pink: "#ff0080",
-          blue: "#00d4ff",
-          purple: "#b400ff",
-        },
         chart: {
           "1": "var(--chart-1)",
           "2": "var(--chart-2)",
@@ -98,13 +93,12 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "float": "float 6s ease-in-out infinite",
-        "glow": "glow 2s ease-in-out infinite alternate",
-        "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "bounce-slow": "bounce 3s infinite",
-        "scale-in": "scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "slide-up": "slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-        "fade-in": "fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        "float": "floating 6s ease-in-out infinite",
+        "pulse-gentle": "gentlePulse 3s ease-in-out infinite",
+        "fade-in": "fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-up": "slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-left": "slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-right": "slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },
