@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,42 +94,41 @@ export default function Reasoning() {
 
   if (showResult && challengeResult) {
     return (
-      <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
-        <Card className="glass-card glass-card-hover animate-slide-up neon-primary">
+      <div className="p-4 space-y-6 pb-20">
+        <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-display gradient-text">
+            <CardTitle className="text-2xl">
               {challengeResult.correct ? "Correct! 🎉" : "Not quite right 😔"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
               <p className="font-medium mb-2">Your answer:</p>
-              <p className="text-lg glass-border p-3 rounded-lg">{challengeResult.userAnswer}</p>
+              <p className="text-lg bg-secondary p-3 rounded-lg">{challengeResult.userAnswer}</p>
             </div>
 
             <div className="text-center">
               <p className="font-medium mb-2">Correct answer:</p>
-              <p className="text-lg glass-border p-3 rounded-lg text-primary font-semibold neon-text">
+              <p className="text-lg bg-primary/10 p-3 rounded-lg text-primary font-semibold">
                 {challengeResult.answer}
               </p>
             </div>
 
             {challengeResult.correct && (
-              <div className="text-center float-animation">
-                <Badge className="text-lg px-4 py-2 bg-success neon-accent">
+              <div className="text-center">
+                <Badge className="text-lg px-4 py-2 bg-success">
                   +{challengeResult.points} points earned!
                 </Badge>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <Button onClick={resetChallenge} variant="outline" data-testid="button-new-challenge" className="btn-glass hover-lift">
+              <Button onClick={resetChallenge} variant="outline" data-testid="button-new-challenge">
                 New Challenge
               </Button>
               <Button 
                 onClick={() => startChallenge(currentChallenge?.difficulty || "medium")}
                 data-testid="button-try-again"
-                className="btn-neon micro-bounce"
               >
                 Try Again
               </Button>
@@ -143,21 +141,21 @@ export default function Reasoning() {
 
   if (currentChallenge) {
     return (
-      <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
-        <Card className="glass-card glass-card-hover animate-slide-up">
+      <div className="p-4 space-y-6 pb-20">
+        <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg capitalize font-display gradient-text">
+              <CardTitle className="text-lg capitalize">
                 {currentChallenge.difficulty} Challenge
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={resetChallenge} data-testid="button-exit-challenge" className="hover-lift">
+              <Button variant="ghost" size="sm" onClick={resetChallenge} data-testid="button-exit-challenge">
                 Exit
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-4 glass-border rounded-lg">
-              <p className="text-sm font-medium mb-2 gradient-text">{currentChallenge.category}</p>
+            <div className="p-4 bg-secondary rounded-lg">
+              <p className="text-sm font-medium mb-2">{currentChallenge.category}</p>
               <p className="text-lg" data-testid="text-challenge-question">
                 {currentChallenge.question}
               </p>
@@ -171,13 +169,12 @@ export default function Reasoning() {
                 onChange={(e) => setUserAnswer(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && submitAnswer()}
                 data-testid="input-answer"
-                className="input-glass focus-enhanced"
               />
               
               <Button
                 onClick={submitAnswer}
                 disabled={!userAnswer.trim() || submitAnswerMutation.isPending}
-                className="w-full btn-neon micro-bounce"
+                className="w-full"
                 data-testid="button-submit-answer"
               >
                 Submit Answer
@@ -190,29 +187,29 @@ export default function Reasoning() {
   }
 
   return (
-    <div className="p-4 space-y-6 pb-20 custom-scrollbar smooth-scroll">
+    <div className="p-4 space-y-6 pb-20">
       {/* Header */}
-      <div className="text-center animate-slide-up">
-        <h2 className="text-2xl font-bold mb-2 font-display gradient-text">Daily Reasoning</h2>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">Daily Reasoning</h2>
         <p className="text-muted-foreground">Sharpen your critical thinking skills</p>
       </div>
 
       {/* Streak Counter */}
-      <div className="glass-card glass-card-hover neon-primary p-6 rounded-xl text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-center justify-center gap-2 mb-2 float-animation">
-          <Flame className="h-8 w-8 text-orange-500" />
-          <span className="text-3xl font-bold font-display neon-text" data-testid="text-streak">
+      <div className="bg-gradient-to-r from-accent to-warning p-6 rounded-xl text-white text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Flame className="h-8 w-8" />
+          <span className="text-3xl font-bold" data-testid="text-streak">
             {user?.currentStreak || 0}
           </span>
         </div>
-        <p className="font-semibold font-display">Day Streak</p>
+        <p className="font-semibold">Day Streak</p>
         <p className="text-sm opacity-90 mt-1">Keep it up! You're on fire! 🔥</p>
       </div>
 
       {/* Difficulty Selection */}
-      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.2s' }}>
+      <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 font-display">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Choose Difficulty
           </h3>
@@ -221,7 +218,7 @@ export default function Reasoning() {
               <Button
                 key={difficulty.name}
                 variant="outline"
-                className="w-full p-4 h-auto justify-between glass-card-hover btn-glass"
+                className="w-full p-4 h-auto justify-between hover:bg-primary hover:text-primary-foreground"
                 onClick={() => startChallenge(difficulty.name)}
                 disabled={generateChallengeMutation.isPending}
                 data-testid={`button-difficulty-${difficulty.name.toLowerCase()}`}
@@ -233,7 +230,7 @@ export default function Reasoning() {
                     <p className="text-xs text-muted-foreground">{difficulty.description}</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-xs glass-border">
+                <Badge variant="secondary" className="text-xs">
                   +{difficulty.points} pts
                 </Badge>
               </Button>
@@ -243,14 +240,14 @@ export default function Reasoning() {
       </Card>
 
       {/* Today's Challenge */}
-      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.3s' }}>
+      <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 font-display">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-accent" />
             Today's Challenge
           </h3>
-          <div className="p-4 glass-border rounded-lg mb-4">
-            <p className="text-sm font-medium mb-2 gradient-text">Pattern Recognition</p>
+          <div className="p-4 bg-secondary rounded-lg mb-4">
+            <p className="text-sm font-medium mb-2">Pattern Recognition</p>
             <p className="text-sm text-muted-foreground mb-3">
               Look at the sequence: 2, 6, 12, 20, 30, ?
             </p>
@@ -258,7 +255,7 @@ export default function Reasoning() {
           </div>
           <Button 
             onClick={() => startChallenge("Medium")}
-            className="w-full btn-neon micro-bounce"
+            className="w-full"
             disabled={generateChallengeMutation.isPending}
             data-testid="button-start-daily-challenge"
           >
@@ -269,17 +266,17 @@ export default function Reasoning() {
 
       {/* Progress Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="glass-card glass-card-hover pulse-glow animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary mb-1 font-display neon-text" data-testid="text-problems-solved">
+            <div className="text-2xl font-bold text-primary mb-1" data-testid="text-problems-solved">
               {reasoningHistory.length}
             </div>
             <p className="text-xs text-muted-foreground">Problems Solved</p>
           </CardContent>
         </Card>
-        <Card className="glass-card glass-card-hover pulse-glow animate-slide-up" style={{ animationDelay: '0.5s' }}>
+        <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-success mb-1 font-display neon-text" data-testid="text-accuracy">
+            <div className="text-2xl font-bold text-success mb-1" data-testid="text-accuracy">
               {accuracyRate}%
             </div>
             <p className="text-xs text-muted-foreground">Accuracy Rate</p>
@@ -288,9 +285,9 @@ export default function Reasoning() {
       </div>
 
       {/* Categories */}
-      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.6s' }}>
+      <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 font-display">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Layers className="h-5 w-5 text-muted-foreground" />
             Practice Categories
           </h3>
@@ -299,7 +296,7 @@ export default function Reasoning() {
               <Button
                 key={category.name}
                 variant="outline"
-                className="p-3 h-auto flex-col gap-2 glass-card-hover btn-glass"
+                className="p-3 h-auto flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
                 onClick={() => startChallenge("Medium", category.name.toLowerCase().replace(" ", "_"))}
                 disabled={generateChallengeMutation.isPending}
                 data-testid={`button-category-${category.name.toLowerCase().replace(' ', '-')}`}
@@ -313,20 +310,20 @@ export default function Reasoning() {
       </Card>
 
       {/* Weekly Performance */}
-      <Card className="glass-card glass-card-hover animate-slide-up" style={{ animationDelay: '0.7s' }}>
+      <Card>
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 font-display">
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             This Week's Performance
           </h3>
-          <div className="flex items-end justify-between h-24 mb-3 glass-border rounded-lg p-3">
+          <div className="flex items-end justify-between h-24 mb-3">
             {Array.from({ length: 7 }, (_, i) => {
               const dayData = Math.floor(Math.random() * 5) + 1;
               const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
               return (
                 <div key={i} className="flex flex-col items-center gap-1">
                   <div 
-                    className="bg-gradient-to-t from-primary to-accent w-4 rounded-t transition-all hover-lift" 
+                    className="bg-primary w-4 rounded-t transition-all" 
                     style={{ height: `${dayData * 4 + 8}px` }}
                   ></div>
                   <span className="text-xs text-muted-foreground">{dayNames[i]}</span>

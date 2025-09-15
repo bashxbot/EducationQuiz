@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { Header } from "@/components/layout/header";
-import BottomNavigation from "@/components/layout/bottom-navigation";
+import { BottomNavigation } from "@/components/layout/bottom-navigation";
 import { AchievementProvider } from "@/providers/AchievementProvider";
 import Dashboard from "@/pages/dashboard";
 import Chat from "@/pages/chat";
