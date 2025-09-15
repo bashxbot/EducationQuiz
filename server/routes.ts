@@ -83,7 +83,7 @@ router.get('/api/progress', (req, res) => {
     averageScore: quizHistory.length > 0 
       ? Math.round(quizHistory.reduce((sum, quiz) => sum + quiz.score, 0) / quizHistory.length)
       : 0,
-    subjectsStudied: [...new Set(quizHistory.map(q => q.subject))].length,
+    subjectsStudied: Array.from(new Set(quizHistory.map(q => q.subject))).length,
     streakDays: 7
   });
 });
