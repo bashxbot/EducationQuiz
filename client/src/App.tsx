@@ -34,14 +34,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="eduapp-theme">
+      <ThemeProvider defaultTheme="light" storageKey="eduapp-theme">
         <AchievementProvider>
           <TooltipProvider>
-          <div className="flex flex-col min-h-screen max-w-md mx-auto relative bg-background">
-            <div className="relative z-10 flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen max-w-md mx-auto relative bg-background overflow-x-hidden">
+            <div className="relative z-10 flex flex-col min-h-screen w-full">
               <Header />
-              <main className="flex-1 overflow-hidden">
-                <Router />
+              <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
+                <div className="w-full">
+                  <Router />
+                </div>
               </main>
               <BottomNavigation />
             </div>
