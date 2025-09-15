@@ -62,6 +62,20 @@ export default function Quiz() {
   const { updateProfile } = useUserProfile();
 
   useEffect(() => {
+    // Load saved quiz progress on component mount
+    const savedProgress = localStorage.getItem('quiz-progress');
+    if (savedProgress) {
+      const progressData = JSON.parse(savedProgress);
+      setQuestions(progressData.questions);
+      setCurrentQuestionIndex(progressData.currentQuestionIndex);
+      setUserAnswers(progressData.userAnswers);
+      setTimer(progressData.timer);
+      setSelectedSubject(progressData.selectedSubject);
+      setSelectedTopic(progressData.selectedTopic);
+      setSelectedDifficulty(progressData.selectedDifficulty);
+      setQuizMode('quiz');
+    }
+
     let interval: NodeJS.Timeout;
     if (quizMode === 'quiz') {
       interval = setInterval(() => {
@@ -81,7 +95,25 @@ export default function Quiz() {
     if (!selectedSubject) return;
 
     setIsLoading(true);
+
+    // Save quiz setup to localStorage for persistence
+    const quizSetup = {
+      selectedSubject,
+      selectedTopic,
+      selectedDifficulty,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('quiz-setup', JSON.stringify(quizSetup));
+
     try {
+      console.log('Generating quiz with params:', {
+        class: 'Class 10',
+        subject: selectedSubject,
+        topic: selectedTopic === 'mixed' ? undefined : selectedTopic || undefined,
+        difficulty: selectedDifficulty,
+        count: 10
+      });
+
       const response = await fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,43 +126,88 @@ export default function Quiz() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to generate quiz');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to generate quiz: ${response.status} ${errorText}`);
+      }
 
       const quiz = await response.json();
+
+      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        throw new Error('Invalid quiz data received');
+      }
+
+      console.log('Quiz generated successfully:', quiz);
+
       setQuestions(quiz.questions);
       setUserAnswers(new Array(quiz.questions.length).fill(''));
       setCurrentQuestionIndex(0);
       setTimer(0);
       setQuizMode('quiz');
+
+      // Save quiz progress
+      localStorage.setItem('quiz-progress', JSON.stringify({
+        questions: quiz.questions,
+        currentQuestionIndex: 0,
+        userAnswers: new Array(quiz.questions.length).fill(''),
+        timer: 0,
+        selectedSubject,
+        selectedTopic,
+        selectedDifficulty
+      }));
+
     } catch (error) {
       console.error('Quiz generation error:', error);
-      // Use fallback sample questions to keep app functional
+
+      // Use enhanced fallback sample questions
       const sampleQuestions: QuizQuestion[] = [
         {
           id: '1',
-          question: 'What is the square root of 144?',
+          question: `What is the square root of 144? (${selectedSubject} - ${selectedDifficulty})`,
           options: ['10', '11', '12', '13'],
           correctAnswer: '12',
           explanation: 'The square root of 144 is 12 because 12 × 12 = 144.',
-          difficulty: 'easy',
-          topic: 'Algebra'
+          difficulty: selectedDifficulty,
+          topic: selectedTopic === 'mixed' ? 'Algebra' : selectedTopic || 'Algebra'
         },
         {
           id: '2',
-          question: 'Which of the following is a prime number?',
+          question: `Which of the following is a prime number? (${selectedSubject} - ${selectedDifficulty})`,
           options: ['15', '17', '21', '25'],
           correctAnswer: '17',
           explanation: 'A prime number is a number greater than 1 that has no positive divisors other than 1 and itself. 17 is only divisible by 1 and 17.',
-          difficulty: 'medium',
-          topic: 'Number Theory'
+          difficulty: selectedDifficulty,
+          topic: selectedTopic === 'mixed' ? 'Number Theory' : selectedTopic || 'Number Theory'
+        },
+        {
+          id: '3',
+          question: `What is 2 + 2? (${selectedSubject} - ${selectedDifficulty})`,
+          options: ['3', '4', '5', '6'],
+          correctAnswer: '4',
+          explanation: 'Basic addition: 2 + 2 = 4',
+          difficulty: selectedDifficulty,
+          topic: selectedTopic === 'mixed' ? 'Basic Math' : selectedTopic || 'Basic Math'
         }
       ];
+
       setQuestions(sampleQuestions);
       setUserAnswers(new Array(sampleQuestions.length).fill(''));
       setCurrentQuestionIndex(0);
       setTimer(0);
       setQuizMode('quiz');
-      // Show a non-blocking notification instead of alert
+
+      // Save fallback quiz progress
+      localStorage.setItem('quiz-progress', JSON.stringify({
+        questions: sampleQuestions,
+        currentQuestionIndex: 0,
+        userAnswers: new Array(sampleQuestions.length).fill(''),
+        timer: 0,
+        selectedSubject,
+        selectedTopic,
+        selectedDifficulty,
+        fallback: true
+      }));
+
       console.warn('Using fallback questions due to API error');
     } finally {
       setIsLoading(false);
@@ -190,6 +267,9 @@ export default function Quiz() {
     updateProfile({ totalPoints: prev => (prev || 0) + pointsEarned });
 
     setQuizMode('results');
+    // Clear saved progress after finishing
+    localStorage.removeItem('quiz-progress');
+    localStorage.removeItem('quiz-setup');
   };
 
   const resetQuiz = () => {
@@ -203,6 +283,9 @@ export default function Quiz() {
     setTimer(0);
     setQuizResults(null);
     setReviewMode(false);
+    // Clear saved progress on reset
+    localStorage.removeItem('quiz-progress');
+    localStorage.removeItem('quiz-setup');
   };
 
   const startReview = () => {

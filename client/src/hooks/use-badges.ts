@@ -111,3 +111,123 @@ export function useAutoAchievements(data: BadgeData) {
 
   return { checkAndAwardBadges };
 }
+import { useState, useEffect } from 'react';
+import { useQuizHistory, useReasoningProgress } from './use-app-storage';
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  earned: boolean;
+}
+
+export interface BadgeData {
+  earned: string[];
+  available: Badge[];
+}
+
+export function useBadges() {
+  const [badges, setBadges] = useState<BadgeData>({
+    earned: [],
+    available: []
+  });
+
+  useEffect(() => {
+    // Load badges from localStorage
+    const savedBadges = localStorage.getItem('eduapp-earned-badges');
+    const earnedBadges = savedBadges ? JSON.parse(savedBadges) : [];
+
+    const availableBadges: Badge[] = [
+      {
+        id: 'scholar',
+        name: 'Scholar',
+        description: 'Complete 10 quizzes',
+        earned: earnedBadges.includes('scholar')
+      },
+      {
+        id: 'speedster',
+        name: 'Speedster',
+        description: 'Answer quickly',
+        earned: earnedBadges.includes('speedster')
+      },
+      {
+        id: 'perfectionist',
+        name: 'Perfectionist',
+        description: 'Get 100% on a quiz',
+        earned: earnedBadges.includes('perfectionist')
+      },
+      {
+        id: 'streaker',
+        name: 'Streaker',
+        description: '7 day streak',
+        earned: earnedBadges.includes('streaker')
+      },
+      {
+        id: 'quiz-master',
+        name: 'Quiz Master',
+        description: 'Complete 25 quizzes',
+        earned: earnedBadges.includes('quiz-master')
+      }
+    ];
+
+    setBadges({
+      earned: earnedBadges,
+      available: availableBadges
+    });
+  }, []);
+
+  const earnBadge = (badgeId: string) => {
+    setBadges(prev => {
+      if (prev.earned.includes(badgeId)) return prev;
+
+      const newEarned = [...prev.earned, badgeId];
+      localStorage.setItem('eduapp-earned-badges', JSON.stringify(newEarned));
+
+      return {
+        ...prev,
+        earned: newEarned,
+        available: prev.available.map(badge => 
+          badge.id === badgeId ? { ...badge, earned: true } : badge
+        )
+      };
+    });
+  };
+
+  return { badges, earnBadge };
+}
+
+export function useAutoAchievements() {
+  const { quizHistory } = useQuizHistory();
+  const { progress } = useReasoningProgress();
+  const { earnBadge } = useBadges();
+
+  useEffect(() => {
+    // Check for achievements based on quiz history
+    if (quizHistory.length >= 10) {
+      earnBadge('scholar');
+    }
+
+    if (quizHistory.length >= 25) {
+      earnBadge('quiz-master');
+    }
+
+    // Check for perfect score
+    const hasPerfectScore = quizHistory.some(quiz => quiz.score === 100);
+    if (hasPerfectScore) {
+      earnBadge('perfectionist');
+    }
+
+    // Check for speed achievement (if quiz time is tracked)
+    const hasSpeedRun = quizHistory.some(quiz => 
+      quiz.timeSpent && quiz.timeSpent < 120 // Less than 2 minutes
+    );
+    if (hasSpeedRun) {
+      earnBadge('speedster');
+    }
+
+    // Check for streak
+    if (progress && progress.currentStreak >= 7) {
+      earnBadge('streaker');
+    }
+  }, [quizHistory, progress, earnBadge]);
+}
