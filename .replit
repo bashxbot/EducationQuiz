@@ -22,7 +22,7 @@ integrations = ["javascript_gemini:1.0.0", "javascript_mem_db:1.0.0"]
 expertMode = true
 
 [workflows]
-runButton = "Start Dev Server (Fixed)"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -41,6 +41,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[workflows.workflow]]
 name = "Start Dev Server"
