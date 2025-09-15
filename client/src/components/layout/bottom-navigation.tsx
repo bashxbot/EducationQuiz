@@ -1,43 +1,66 @@
 
-import { Home, MessageCircle, Trophy, User, Brain, Crown } from "lucide-react";
+import { Home, MessageCircle, Trophy, User, Brain, Crown, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { icon: Home, label: "Dashboard", path: "/" },
-  { icon: MessageCircle, label: "Chat", path: "/chat" },
-  { icon: Brain, label: "Quiz", path: "/quiz" },
-  { path: "/reasoning", icon: Brain, label: "Reasoning" },
-  { path: "/leaderboard", icon: Crown, label: "Leaderboard" },
-  { path: "/profile", icon: User, label: "Profile" },
+  { icon: Home, label: "Home", path: "/", color: "text-blue-400" },
+  { icon: MessageCircle, label: "Chat", path: "/chat", color: "text-green-400" },
+  { icon: Brain, label: "Quiz", path: "/quiz", color: "text-purple-400" },
+  { path: "/reasoning", icon: Zap, label: "Reason", color: "text-yellow-400" },
+  { path: "/leaderboard", icon: Crown, label: "Leaders", color: "text-orange-400" },
+  { path: "/profile", icon: User, label: "Profile", color: "text-pink-400" },
 ];
 
 export function BottomNavigation() {
   const [location, setLocation] = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md modern-card border-t border-border z-50">
-      <div className="flex items-center justify-around py-3 px-2">
-        {navItems.map(({ icon: Icon, label, path }) => {
-          const isActive = location === path;
-          return (
-            <button
-              key={path}
-              onClick={() => setLocation(path)}
-              className={cn(
-                "flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 font-body text-xs font-medium",
-                isActive 
-                  ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25 scale-110" 
-                  : "text-purple-200 hover:text-white hover:bg-white/10 hover:scale-105"
-              )}
-              data-testid={`nav-${label.toLowerCase()}`}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px]">{label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+      <nav className="mx-auto max-w-md premium-nav rounded-2xl border border-border/50 animate-slide-up">
+        <div className="flex items-center justify-around py-3 px-2">
+          {navItems.map(({ icon: Icon, label, path, color }) => {
+            const isActive = location === path;
+            return (
+              <button
+                key={path}
+                onClick={() => setLocation(path)}
+                className={cn(
+                  "relative flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 font-medium text-xs group",
+                  isActive 
+                    ? "text-white bg-gradient-to-r from-primary via-accent to-pink-500 shadow-lg shadow-primary/30 scale-110 animate-pulse-glow" 
+                    : "text-foreground-tertiary hover:text-foreground hover:bg-surface hover:scale-105"
+                )}
+                data-testid={`nav-${label.toLowerCase()}`}
+              >
+                <div className="relative">
+                  <Icon className={cn(
+                    "h-5 w-5 transition-all duration-300",
+                    isActive ? "text-white" : color
+                  )} />
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-full bg-white/20 animate-ping" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium tracking-wide transition-all duration-300",
+                  isActive ? "text-white font-semibold" : "text-foreground-tertiary group-hover:text-foreground"
+                )}>
+                  {label}
+                </span>
+                
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full animate-pulse" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Navigation glow effect */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-pink-500/10 opacity-50 blur-xl -z-10" />
+      </nav>
+    </div>
   );
 }
