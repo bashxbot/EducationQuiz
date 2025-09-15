@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ export default function Profile() {
   const { reasoningProgress } = useReasoningProgress();
   const { badges } = useBadges();
   const { theme, setTheme } = useTheme();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
   const [showSettings, setShowSettings] = useState(false);
@@ -92,7 +91,7 @@ export default function Profile() {
       badges: badges.earned,
       exportDate: new Date().toISOString()
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -111,6 +110,33 @@ export default function Profile() {
     progress: Math.round((badges.earned.length / badges.available.length) * 100)
   };
 
+  // Achievements data
+  const userBadges = badges.earned;
+  const achievements = [
+    { 
+      icon: Target,
+      title: 'Perfect Score',
+      description: 'Scored 100% on a quiz',
+      points: 50,
+      earned: userBadges.includes('perfectionist')
+    },
+    { 
+      icon: Trophy,
+      title: 'Quiz Master',
+      description: 'Completed 10 quizzes',
+      points: 100,
+      earned: userBadges.includes('quiz-master')
+    },
+    { 
+      icon: Flame,
+      title: 'Speed Demon',
+      description: 'Completed a quiz in under 2 minutes',
+      points: 75,
+      earned: userBadges.includes('speedster')
+    }
+  ];
+
+
   return (
     <div className="p-4 space-y-6 pb-20">
       {/* Profile Header */}
@@ -125,7 +151,7 @@ export default function Profile() {
                 <Camera className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="flex-1">
               {isEditing ? (
                 <div className="space-y-3">
@@ -178,7 +204,7 @@ export default function Profile() {
                 </div>
               )}
             </div>
-            
+
             <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
               <Settings className="h-4 w-4" />
             </Button>
@@ -197,7 +223,7 @@ export default function Profile() {
             <p className="text-sm text-muted-foreground">Total Points</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
@@ -260,7 +286,7 @@ export default function Profile() {
               ></div>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 gap-3">
             {badges.available.map((badge, index) => (
               <div key={`badge-${badge.id}-${index}`} className="text-center">
@@ -279,6 +305,31 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground">{badge.description}</p>
               </div>
             ))}
+          </div>
+          
+          {/* Achievements Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              Your Achievements
+            </h3>
+            <div className="space-y-3">
+              {achievements.map((achievement, index) => (
+                    <div 
+                      key={`achievement-${index}`}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <achievement.icon className="h-5 w-5 text-primary" />
+                        <div>
+                          <h4 className="font-medium">{achievement.title}</h4>
+                          <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{achievement.points} pts</Badge>
+                    </div>
+                  ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -301,7 +352,7 @@ export default function Profile() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold">{quiz.score}%</p>
-                  <p className="text-xs text-muted-foreground">{quiz.difficulty}</p>
+                  <p className="text-sm text-muted-foreground">{quiz.difficulty}</p>
                 </div>
               </div>
             ))}
@@ -356,7 +407,7 @@ export default function Profile() {
                   <Download className="h-4 w-4 mr-2" />
                   Export Data
                 </Button>
-                
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-destructive">
