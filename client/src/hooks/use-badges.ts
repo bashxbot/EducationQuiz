@@ -2,6 +2,31 @@
 import { useState, useEffect } from "react";
 import { Target, Trophy, Flame } from "lucide-react";
 
+// Storage key for earned badges
+const STORAGE_KEYS = {
+  EARNED_BADGES: 'eduapp-earned-badges',
+} as const;
+
+// Utility functions for localStorage
+function safeParseFromStorage<T>(key: string, defaultValue: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return defaultValue;
+    return JSON.parse(stored);
+  } catch (error) {
+    console.warn(`Invalid data in localStorage for key "${key}", using default:`, error);
+    return defaultValue;
+  }
+}
+
+function safeSaveToStorage<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to save to localStorage for key "${key}":`, error);
+  }
+}
+
 export interface Badge {
   id: string;
   name: string;
@@ -23,7 +48,14 @@ export interface BadgeData {
 }
 
 export function useBadges() {
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badges, setBadges] = useState<Badge[]>(() => 
+    safeParseFromStorage(STORAGE_KEYS.EARNED_BADGES, [])
+  );
+
+  // Persist badges to localStorage whenever they change
+  useEffect(() => {
+    safeSaveToStorage(STORAGE_KEYS.EARNED_BADGES, badges);
+  }, [badges]);
 
   const getAllBadgeDefinitions = (): Badge[] => [
     {
@@ -60,6 +92,7 @@ export function useBadges() {
 
   const checkAndAwardBadges = (data: BadgeData): Badge[] => {
     const allBadges = getAllBadgeDefinitions();
+    const earnedIds = new Set(badges.map(b => b.id));
     const newBadges: Badge[] = [];
 
     allBadges.forEach(badge => {
@@ -77,14 +110,20 @@ export function useBadges() {
           break;
       }
 
-      if (shouldEarn && !badge.earned) {
+      // Only award if should earn and not already earned
+      if (shouldEarn && !earnedIds.has(badge.id)) {
         const earnedBadge = { ...badge, earned: true, earnedAt: new Date().toISOString() };
         newBadges.push(earnedBadge);
       }
     });
 
     if (newBadges.length > 0) {
-      setBadges(prev => [...prev, ...newBadges]);
+      setBadges(prev => {
+        // Dedupe by id to prevent duplicates
+        const existingIds = new Set(prev.map(b => b.id));
+        const filteredNew = newBadges.filter(b => !existingIds.has(b.id));
+        return [...prev, ...filteredNew];
+      });
     }
 
     return newBadges;
@@ -93,20 +132,22 @@ export function useBadges() {
   return { getAllBadgeDefinitions, badges, checkAndAwardBadges };
 }
 
-export function useAutoAchievements(data: BadgeData) {
+export function useAutoAchievements(data?: BadgeData) {
   const { checkAndAwardBadges } = useBadges();
 
   useEffect(() => {
+    if (!data) return;
+    
     const newBadges = checkAndAwardBadges(data);
     if (newBadges.length > 0) {
       console.log('New badges earned:', newBadges.map(b => b.name));
     }
   }, [
-    data.totalQuizzes,
-    data.totalPoints,
-    data.currentStreak,
-    data.reasoningAccuracy,
-    JSON.stringify(data.history.map(h => h.score))
+    data?.totalQuizzes,
+    data?.totalPoints,
+    data?.currentStreak,
+    data?.reasoningAccuracy,
+    data ? JSON.stringify(data.history.map((h: any) => h.score)) : '[]'
   ]);
 
   return { checkAndAwardBadges };

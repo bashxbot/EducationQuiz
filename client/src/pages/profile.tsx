@@ -39,9 +39,9 @@ import { useTheme } from "@/lib/theme";
 
 export default function Profile() {
   const { profile, updateProfile } = useUserProfile();
-  const { quizHistory } = useQuizHistory();
-  const { reasoningProgress } = useReasoningProgress();
-  const { badges } = useBadges();
+  const { history: quizHistory } = useQuizHistory();
+  const { progress: reasoningProgress } = useReasoningProgress();
+  const { badges, getAllBadgeDefinitions } = useBadges();
   const { theme, setTheme } = useTheme();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -49,17 +49,24 @@ export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
 
   // Auto-trigger achievements
-  useAutoAchievements();
+  const badgeData = {
+    totalQuizzes: quizHistory.length,
+    history: quizHistory,
+    totalPoints: profile.totalPoints,
+    currentStreak: profile.currentStreak,
+    reasoningAccuracy: reasoningProgress.totalSolved > 0
+      ? Math.round((reasoningProgress.accuracyRate * reasoningProgress.totalSolved) / reasoningProgress.totalSolved)
+      : 0
+  };
+  useAutoAchievements(badgeData);
 
   // Calculate stats
   const totalQuizzes = quizHistory.length;
   const averageScore = totalQuizzes > 0 
-    ? Math.round(quizHistory.reduce((sum, quiz) => sum + quiz.score, 0) / totalQuizzes)
+    ? Math.round(quizHistory.reduce((sum: number, quiz: any) => sum + quiz.score, 0) / totalQuizzes)
     : 0;
-  const totalReasoningChallenges = reasoningProgress.length;
-  const reasoningAccuracy = totalReasoningChallenges > 0
-    ? Math.round((reasoningProgress.filter(r => r.correct).length / totalReasoningChallenges) * 100)
-    : 0;
+  const totalReasoningChallenges = reasoningProgress.totalSolved;
+  const reasoningAccuracy = reasoningProgress.accuracyRate;
 
   const handleSaveProfile = () => {
     updateProfile(editedProfile);
@@ -74,6 +81,7 @@ export default function Profile() {
   const handleResetData = () => {
     resetAppData();
     setEditedProfile({
+      ...profile,
       name: "Anonymous User",
       email: "",
       class: "",
@@ -88,7 +96,7 @@ export default function Profile() {
       profile,
       quizHistory,
       reasoningProgress,
-      badges: badges.earned,
+      badges: badges,
       exportDate: new Date().toISOString()
     };
 
@@ -104,35 +112,37 @@ export default function Profile() {
   };
 
   // Badge statistics
+  const allBadgeDefinitions = getAllBadgeDefinitions();
+  const earnedBadgeIds = new Set(badges.map(b => b.id));
   const badgeStats = {
-    total: badges.available.length,
-    earned: badges.earned.length,
-    progress: Math.round((badges.earned.length / badges.available.length) * 100)
+    total: allBadgeDefinitions.length,
+    earned: badges.length,
+    progress: Math.round((badges.length / allBadgeDefinitions.length) * 100)
   };
 
   // Achievements data
-  const userBadges = badges.earned;
+  const userBadges = badges.map(b => b.id);
   const achievements = [
     { 
       icon: Target,
       title: 'Perfect Score',
       description: 'Scored 100% on a quiz',
       points: 50,
-      earned: userBadges.includes('perfectionist')
+      earned: earnedBadgeIds.has('perfectionist')
     },
     { 
       icon: Trophy,
       title: 'Quiz Master',
       description: 'Completed 10 quizzes',
       points: 100,
-      earned: userBadges.includes('quiz-master')
+      earned: earnedBadgeIds.has('quiz-master')
     },
     { 
       icon: Flame,
       title: 'Speed Demon',
       description: 'Completed a quiz in under 2 minutes',
       points: 75,
-      earned: userBadges.includes('speedster')
+      earned: earnedBadgeIds.has('speedster')
     }
   ];
 
@@ -288,10 +298,10 @@ export default function Profile() {
           </div>
 
           <div className="grid grid-cols-4 gap-3">
-            {badges.available.map((badge, index) => (
+            {allBadgeDefinitions.map((badge: any, index: number) => (
               <div key={`badge-${badge.id}-${index}`} className="text-center">
                 <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl ${
-                  badges.earned.includes(badge.id) 
+                  earnedBadgeIds.has(badge.id) 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted text-muted-foreground'
                 }`}>
@@ -344,7 +354,7 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {quizHistory.slice(0, 5).map((quiz, index) => (
+            {quizHistory.slice(0, 5).map((quiz: any, index: number) => (
               <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary rounded-lg">
                 <div>
                   <p className="font-medium">{quiz.subject}</p>
