@@ -1,4 +1,3 @@
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const API_KEY = process.env.GEMINI_API_KEY || '';
@@ -12,8 +11,8 @@ export async function generateQuiz(params: {
   count: number;
 }) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     const prompt = `Generate a quiz for ${params.class} students on ${params.subject}${params.topic ? ` focusing on ${params.topic}` : ''} with ${params.difficulty} difficulty level. Create exactly ${params.count} multiple choice questions.
 
 Format the response as a JSON object with this structure:
@@ -36,13 +35,13 @@ Make questions educational, accurate, and age-appropriate. Use LaTeX syntax for 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text();
-    
+
     // Clean up the response
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    
+
     try {
       const quiz = JSON.parse(text);
-      
+
       // Ensure questions have proper IDs
       if (quiz.questions) {
         quiz.questions.forEach((q: any, index: number) => {
@@ -51,7 +50,7 @@ Make questions educational, accurate, and age-appropriate. Use LaTeX syntax for 
           }
         });
       }
-      
+
       return quiz;
     } catch (parseError) {
       console.error('Failed to parse quiz JSON:', parseError);
@@ -77,8 +76,8 @@ Make questions educational, accurate, and age-appropriate. Use LaTeX syntax for 
 
 export async function generateChat(message: string) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     const prompt = `You are a helpful educational AI assistant for students. Answer this question clearly and educationally, using proper formatting including:
 - **Bold text** for emphasis
 - *Italic text* for definitions
@@ -105,17 +104,17 @@ export async function generateReasoning(params: {
   category: string;
 }) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     const categoryMap: Record<string, string> = {
       'logic': 'logical reasoning and deduction',
       'number_series': 'number patterns and sequences',
       'pattern_match': 'visual and abstract patterns',
       'analytical': 'analytical and critical thinking'
     };
-    
+
     const categoryDesc = categoryMap[params.category] || 'logical reasoning';
-    
+
     const prompt = `Create a ${params.difficulty} difficulty reasoning challenge focused on ${categoryDesc}.
 
 Format the response as a JSON object:
@@ -134,19 +133,19 @@ Make the question challenging but fair, appropriate for high school students.`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text();
-    
+
     // Clean up the response
     text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    
+
     try {
       const challenge = JSON.parse(text);
-      
+
       // Ensure challenge has proper ID and timestamp
       if (!challenge.id) {
         challenge.id = `reasoning_${Date.now()}`;
       }
       challenge.createdAt = new Date().toISOString();
-      
+
       return challenge;
     } catch (parseError) {
       console.error('Failed to parse reasoning JSON:', parseError);
