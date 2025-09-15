@@ -1,14 +1,17 @@
 
 import { useState, useEffect } from "react";
+import { Target, Trophy, Flame } from "lucide-react";
 
 export interface Badge {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<any>;
   requirement: string;
   earned: boolean;
   earnedAt?: string;
+  color: string;
+  type: string;
 }
 
 export interface BadgeData {
@@ -27,25 +30,31 @@ export function useBadges() {
       id: "first-quiz",
       name: "First Steps",
       description: "Complete your first quiz",
-      icon: "🎯",
+      icon: Target,
       requirement: "Complete 1 quiz",
-      earned: false
+      earned: false,
+      color: "bg-blue-500 text-white",
+      type: "first-quiz"
     },
     {
       id: "quiz-master",
       name: "Quiz Master",
       description: "Complete 10 quizzes",
-      icon: "🏆",
+      icon: Trophy,
       requirement: "Complete 10 quizzes",
-      earned: false
+      earned: false,
+      color: "bg-yellow-500 text-white",
+      type: "quiz-master"
     },
     {
       id: "streak-keeper",
       name: "Streak Keeper",
       description: "Maintain a 7-day streak",
-      icon: "🔥",
+      icon: Flame,
       requirement: "7-day streak",
-      earned: false
+      earned: false,
+      color: "bg-red-500 text-white",
+      type: "streak-keeper"
     }
   ];
 

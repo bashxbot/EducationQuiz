@@ -332,8 +332,8 @@ export default function Profile() {
           {/* Subject Progress */}
           <div className="space-y-3">
             <h4 className="font-medium">Subject Performance</h4>
-            {subjectStats.map((subject) => (
-              <div key={subject.subject} className="flex items-center justify-between">
+            {subjectStats.map((subject, index) => (
+              <div key={`${subject.subject}-${index}`} className="flex items-center justify-between">
                 <span className="text-sm font-medium">{subject.subject}</span>
                 <div className="flex items-center gap-2">
                   <div className="w-16 h-2 bg-secondary rounded-full">
