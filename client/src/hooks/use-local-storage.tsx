@@ -26,7 +26,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
 export function useLocalStorageState(key: string, defaultValue: string) {
   const [value, setValue] = useLocalStorage(key, defaultValue);
-  
+
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue !== null) {

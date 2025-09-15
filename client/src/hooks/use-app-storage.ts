@@ -90,7 +90,7 @@ function safeParseFromStorage<T>(key: string, schema: z.ZodSchema<T>, defaultVal
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return defaultValue;
-    
+
     const parsed = JSON.parse(stored);
     const validated = schema.parse(parsed);
     return validated;
@@ -166,7 +166,7 @@ export function useChatHistory() {
     }
     safeSaveToStorage(STORAGE_KEYS.CHAT_HISTORY, limitedMessages);
   }, [messages]);
-  
+
   const addMessage = (message: Omit<ChatMessage, "id" | "timestamp">) => {
     const newMessage: ChatMessage = {
       ...message,
@@ -205,7 +205,7 @@ export function useQuizProgress() {
       localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS);
     }
   }, [progress]);
-  
+
   const saveProgress = (progressData: QuizProgress) => {
     setProgress(progressData);
   };
@@ -225,14 +225,14 @@ export function useQuizHistory() {
   useEffect(() => {
     safeSaveToStorage(STORAGE_KEYS.QUIZ_HISTORY, history);
   }, [history]);
-  
+
   const addQuizResult = (result: Omit<QuizHistory, "id" | "completedAt">) => {
     const newResult: QuizHistory = {
       ...result,
       id: Date.now().toString(),
       completedAt: new Date().toISOString(),
     };
-    setHistory(prev => [newResult, ...prev].slice(0, 50)); // Keep only last 50 quizzes
+    setHistory([newResult, ...history].slice(0, 50)); // Keep only last 50 quizzes
     return newResult;
   };
 
@@ -284,11 +284,11 @@ export function useReasoningProgress() {
   const incrementStreak = () => {
     const today = new Date().toDateString();
     const lastDate = progress.lastPracticeDate;
-    
+
     if (lastDate !== today) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      
+
       if (lastDate === yesterday.toDateString()) {
         // Consecutive day, increment streak
         updateProgress({
