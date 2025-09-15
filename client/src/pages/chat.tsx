@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Send, Copy, Check, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Copy, Check, MoreVertical, Trash2, MessageCircle } from 'lucide-react';
 import { useChatHistory } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -90,7 +89,7 @@ export default function Chat() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      
+
       const streamingMsg: StreamingMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -98,7 +97,7 @@ export default function Chat() {
         timestamp: new Date().toISOString(),
         isStreaming: true,
       };
-      
+
       setStreamingMessage(streamingMsg);
 
       while (true) {
@@ -168,27 +167,28 @@ export default function Chat() {
   const allMessages = [...messages, ...(streamingMessage ? [streamingMessage] : [])];
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="border-b p-4 flex justify-between items-center bg-card">
-        <div>
-          <h1 className="text-xl font-semibold">AI Assistant</h1>
-          <p className="text-sm text-muted-foreground">Ask me anything!</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleClearChat} className="text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear Chat
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <div className="flex flex-col h-screen premium-container">
+      {/* Chat Header */}
+      <Card className="premium-card glass-morphism animate-slide-down mx-4 mt-4 mb-2">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary via-accent to-purple-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                <MessageCircle className="h-7 w-7 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-background animate-pulse"></div>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-gradient-primary">AI Learning Assistant</h2>
+              <p className="text-foreground-secondary">Your personal study companion - ask me anything!</p>
+              <div className="flex items-center gap-2 text-xs text-foreground-tertiary">
+                <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                <span>Online & Ready to Help</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
@@ -249,7 +249,7 @@ export default function Chat() {
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   )}
                 </div>
-                
+
                 {msg.role === 'assistant' && !((msg as StreamingMessage).isStreaming) && (
                   <Button
                     variant="ghost"
@@ -268,7 +268,7 @@ export default function Chat() {
             </div>
           ))
         )}
-        
+
         {isLoading && !streamingMessage && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>

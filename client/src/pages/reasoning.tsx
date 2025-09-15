@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Flame, BarChart3, Lightbulb, TrendingUp, Layers, Clock } from "lucide-react";
+import { Flame, BarChart3, Lightbulb, TrendingUp, Layers, Clock, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReasoningChallenge } from "@shared/schema";
 
@@ -21,11 +21,26 @@ const categories = [
   { name: "Analytical", icon: "🧠" },
 ];
 
+// Helper function to get a random problem (replace with actual logic if needed)
+const getRandomProblem = () => {
+  // This is a placeholder. In a real app, you'd fetch or select a random challenge.
+  return {
+    id: Math.random().toString(36).substring(7),
+    difficulty: "medium",
+    category: "logic",
+    question: "What is the next number in the sequence: 1, 4, 9, 16, 25, ?",
+    answer: "36"
+  };
+};
+
 export default function Reasoning() {
   const [currentChallenge, setCurrentChallenge] = useState<ReasoningChallenge | null>(null);
   const [userAnswer, setUserAnswer] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [challengeResult, setChallengeResult] = useState<any>(null);
+  // Placeholder for currentProblem, to be replaced with actual challenge data fetching/generation
+  const [currentProblem, setCurrentProblem] = useState<any>(null);
+
 
   const queryClient = useQueryClient();
 
@@ -94,21 +109,21 @@ export default function Reasoning() {
 
   if (showResult && challengeResult) {
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="p-4 space-y-6 pb-20 premium-container">
+        <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-2xl text-gradient-primary">
               {challengeResult.correct ? "Correct! 🎉" : "Not quite right 😔"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
-              <p className="font-medium mb-2">Your answer:</p>
+              <p className="font-medium mb-2 text-foreground-secondary">Your answer:</p>
               <p className="text-lg bg-secondary p-3 rounded-lg">{challengeResult.userAnswer}</p>
             </div>
 
             <div className="text-center">
-              <p className="font-medium mb-2">Correct answer:</p>
+              <p className="font-medium mb-2 text-foreground-secondary">Correct answer:</p>
               <p className="text-lg bg-primary/10 p-3 rounded-lg text-primary font-semibold">
                 {challengeResult.answer}
               </p>
@@ -123,12 +138,13 @@ export default function Reasoning() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <Button onClick={resetChallenge} variant="outline" data-testid="button-new-challenge">
+              <Button onClick={resetChallenge} variant="outline" data-testid="button-new-challenge" className="premium-button-secondary">
                 New Challenge
               </Button>
               <Button 
                 onClick={() => startChallenge(currentChallenge?.difficulty || "medium")}
                 data-testid="button-try-again"
+                className="premium-button"
               >
                 Try Again
               </Button>
@@ -141,21 +157,21 @@ export default function Reasoning() {
 
   if (currentChallenge) {
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="p-4 space-y-6 pb-20 premium-container">
+        <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg capitalize">
+              <CardTitle className="text-lg capitalize text-gradient-primary">
                 {currentChallenge.difficulty} Challenge
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={resetChallenge} data-testid="button-exit-challenge">
+              <Button variant="ghost" size="sm" onClick={resetChallenge} data-testid="button-exit-challenge" className="premium-button-ghost">
                 Exit
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-4 bg-secondary rounded-lg">
-              <p className="text-sm font-medium mb-2">{currentChallenge.category}</p>
+              <p className="text-sm font-medium mb-2 text-foreground-secondary">{currentChallenge.category}</p>
               <p className="text-lg" data-testid="text-challenge-question">
                 {currentChallenge.question}
               </p>
@@ -169,12 +185,13 @@ export default function Reasoning() {
                 onChange={(e) => setUserAnswer(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && submitAnswer()}
                 data-testid="input-answer"
+                className="premium-input"
               />
-              
+
               <Button
                 onClick={submitAnswer}
                 disabled={!userAnswer.trim() || submitAnswerMutation.isPending}
-                className="w-full"
+                className="w-full premium-button"
                 data-testid="button-submit-answer"
               >
                 Submit Answer
@@ -186,30 +203,48 @@ export default function Reasoning() {
     );
   }
 
+  // Render the main dashboard-like layout
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="p-4 space-y-6 pb-20 premium-container">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Daily Reasoning</h2>
-        <p className="text-muted-foreground">Sharpen your critical thinking skills</p>
-      </div>
+      <Card className="premium-card glass-morphism animate-slide-up">
+        <CardContent className="p-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                <Lightbulb className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gradient-primary">Logical Reasoning</h1>
+                <p className="text-foreground-secondary">Sharpen your analytical thinking skills</p>
+              </div>
+            </div>
+            <Button onClick={() => startChallenge("medium")} size="sm" className="premium-button animate-pulse-glow">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              New Challenge
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Streak Counter */}
-      <div className="bg-gradient-to-r from-accent to-warning p-6 rounded-xl text-white text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Flame className="h-8 w-8" />
-          <span className="text-3xl font-bold" data-testid="text-streak">
-            {user?.currentStreak || 0}
-          </span>
-        </div>
-        <p className="font-semibold">Day Streak</p>
-        <p className="text-sm opacity-90 mt-1">Keep it up! You're on fire! 🔥</p>
-      </div>
+      <Card className="premium-card glass-morphism animate-slide-up delay-100">
+        <CardContent className="p-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Flame className="h-8 w-8 text-gradient-accent" />
+            <span className="text-3xl font-bold text-gradient-primary" data-testid="text-streak">
+              {user?.currentStreak || 0}
+            </span>
+          </div>
+          <p className="font-semibold text-foreground-secondary">Day Streak</p>
+          <p className="text-sm opacity-90 mt-1">Keep it up! You're on fire! 🔥</p>
+        </CardContent>
+      </Card>
 
       {/* Difficulty Selection */}
-      <Card>
+      <Card className="premium-card glass-morphism animate-slide-up delay-200">
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
             <BarChart3 className="h-5 w-5 text-primary" />
             Choose Difficulty
           </h3>
@@ -218,7 +253,7 @@ export default function Reasoning() {
               <Button
                 key={difficulty.name}
                 variant="outline"
-                className="w-full p-4 h-auto justify-between hover:bg-primary hover:text-primary-foreground"
+                className="w-full p-4 h-auto justify-between hover:bg-primary hover:text-primary-foreground premium-button-outline"
                 onClick={() => startChallenge(difficulty.name)}
                 disabled={generateChallengeMutation.isPending}
                 data-testid={`button-difficulty-${difficulty.name.toLowerCase()}`}
@@ -230,7 +265,7 @@ export default function Reasoning() {
                     <p className="text-xs text-muted-foreground">{difficulty.description}</p>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs premium-badge">
                   +{difficulty.points} pts
                 </Badge>
               </Button>
@@ -240,22 +275,22 @@ export default function Reasoning() {
       </Card>
 
       {/* Today's Challenge */}
-      <Card>
+      <Card className="premium-card glass-morphism animate-slide-up delay-300">
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
             <Lightbulb className="h-5 w-5 text-accent" />
             Today's Challenge
           </h3>
           <div className="p-4 bg-secondary rounded-lg mb-4">
-            <p className="text-sm font-medium mb-2">Pattern Recognition</p>
+            <p className="text-sm font-medium mb-2 text-foreground-secondary">Pattern Recognition</p>
             <p className="text-sm text-muted-foreground mb-3">
               Look at the sequence: 2, 6, 12, 20, 30, ?
             </p>
-            <p className="text-sm">What comes next in this sequence?</p>
+            <p className="text-sm text-foreground-secondary">What comes next in this sequence?</p>
           </div>
           <Button 
             onClick={() => startChallenge("Medium")}
-            className="w-full"
+            className="w-full premium-button"
             disabled={generateChallengeMutation.isPending}
             data-testid="button-start-daily-challenge"
           >
@@ -266,7 +301,7 @@ export default function Reasoning() {
 
       {/* Progress Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <Card>
+        <Card className="premium-card glass-morphism animate-slide-up delay-400">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-primary mb-1" data-testid="text-problems-solved">
               {reasoningHistory.length}
@@ -274,7 +309,7 @@ export default function Reasoning() {
             <p className="text-xs text-muted-foreground">Problems Solved</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="premium-card glass-morphism animate-slide-up delay-500">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-success mb-1" data-testid="text-accuracy">
               {accuracyRate}%
@@ -285,9 +320,9 @@ export default function Reasoning() {
       </div>
 
       {/* Categories */}
-      <Card>
+      <Card className="premium-card glass-morphism animate-slide-up delay-600">
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
             <Layers className="h-5 w-5 text-muted-foreground" />
             Practice Categories
           </h3>
@@ -296,13 +331,13 @@ export default function Reasoning() {
               <Button
                 key={category.name}
                 variant="outline"
-                className="p-3 h-auto flex-col gap-2 hover:bg-primary hover:text-primary-foreground"
+                className="p-3 h-auto flex-col gap-2 hover:bg-primary hover:text-primary-foreground premium-button-outline"
                 onClick={() => startChallenge("Medium", category.name.toLowerCase().replace(" ", "_"))}
                 disabled={generateChallengeMutation.isPending}
                 data-testid={`button-category-${category.name.toLowerCase().replace(' ', '-')}`}
               >
                 <span className="text-lg">{category.icon}</span>
-                <p className="text-sm font-medium">{category.name}</p>
+                <p className="font-medium text-foreground-secondary">{category.name}</p>
               </Button>
             ))}
           </div>
@@ -310,9 +345,9 @@ export default function Reasoning() {
       </Card>
 
       {/* Weekly Performance */}
-      <Card>
+      <Card className="premium-card glass-morphism animate-slide-up delay-700">
         <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
             <TrendingUp className="h-5 w-5 text-primary" />
             This Week's Performance
           </h3>

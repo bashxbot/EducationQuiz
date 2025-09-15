@@ -124,17 +124,16 @@ export default function Profile() {
   };
 
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="premium-container">
       {/* Profile Header */}
-      <Card className="neon-border">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
+      <Card className="premium-card glass-morphism animate-slide-up">
+        <CardContent className="p-8">
+          <div className="flex items-start gap-6">
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary via-accent to-blue-500 rounded-full flex items-center justify-center text-black text-2xl font-heading font-bold relative overflow-hidden">
-                <span className="relative z-10">{profile?.name?.charAt(0) || 'N'}</span>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 animate-pulse"></div>
+              <div className="w-24 h-24 bg-gradient-to-br from-primary via-accent to-purple-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-xl animate-pulse-glow">
+                <span className="relative z-10">{profile?.name?.charAt(0) || 'U'}</span>
               </div>
-              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 border-primary hover:bg-primary hover:text-black">
+              <Button size="sm" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 premium-button-secondary shadow-lg">
                 <Camera className="h-4 w-4" />
               </Button>
             </div>

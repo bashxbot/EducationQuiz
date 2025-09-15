@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight, Brain } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useQuizHistory, useUserProfile } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
@@ -449,62 +449,97 @@ export default function Quiz() {
 
   return (
     <div className="p-4 space-y-6 pb-20">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-lg">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </CardTitle>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {formatTime(timer)}
+      {/* Quiz Header */}
+      <Card className="premium-card glass-morphism animate-slide-up">
+        <CardContent className="p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Brain className="h-6 w-6 text-white" />
                 </div>
-                <div>{selectedSubject}: {selectedTopic === 'mixed' || !selectedTopic ? 'Mixed Topics' : selectedTopic}</div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gradient-primary">Physics Quiz</h1>
+                  <p className="text-foreground-secondary">Master the fundamentals of mechanics</p>
+                </div>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={resetQuiz}>
-              Exit
-            </Button>
+            <div className="text-right space-y-2">
+              <div className="text-sm text-foreground-tertiary font-medium">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </div>
+              <div className="w-32 h-3 bg-background-soft rounded-full overflow-hidden shadow-inner">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500 ease-out shadow-sm"
+                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                ></div>
+              </div>
+              <div className="text-xs text-foreground-tertiary">
+                {Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}% Complete
+              </div>
+            </div>
           </div>
-          <Progress value={progress} className="mt-2" />
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="prose prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+        </CardContent>
+      </Card>
+
+      {/* Question Card */}
+      <Card className="premium-card glass-morphism animate-slide-up-delay">
+        <CardContent className="p-8 space-y-8">
+          <div className="space-y-4">
+            <div className="w-full h-1 bg-gradient-to-r from-primary/20 via-accent/40 to-primary/20 rounded-full"></div>
+            <h3 className="text-xl font-semibold leading-relaxed text-foreground-primary">
               {currentQuestion.question}
-            </ReactMarkdown>
+            </h3>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {currentQuestion.options.map((option, index) => (
               <Button
                 key={index}
                 variant={selectedAnswer === option ? "default" : "outline"}
                 onClick={() => selectAnswer(option)}
-                className="w-full justify-start text-left h-auto p-3"
+                className={`w-full justify-start text-left h-auto p-6 premium-button transition-all duration-300 ${
+                  selectedAnswer === option 
+                    ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg transform scale-[1.02]' 
+                    : 'hover:scale-[1.01] hover:shadow-md bg-background-soft border-border-subtle'
+                }`}
               >
-                {option}
+                <span className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold">
+                    {String.fromCharCode(65 + index)}
+                  </span>
+                  <span className="text-base">{option}</span>
+                </span>
               </Button>
             ))}
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between pt-6 border-t border-border-subtle">
             <Button 
               onClick={prevQuestion} 
               disabled={currentQuestionIndex === 0}
               variant="outline"
+              className="premium-button-secondary"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+              <ChevronLeft className="h-4 w-4 mr-2" />
               Previous
             </Button>
             <Button 
               onClick={nextQuestion} 
               disabled={!selectedAnswer}
+              className={`premium-button ${!selectedAnswer ? 'opacity-50' : 'animate-pulse-glow'}`}
             >
-              {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next'}
-              <ChevronRight className="h-4 w-4 ml-1" />
+              {currentQuestionIndex === questions.length - 1 ? (
+                <>
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Complete Quiz
+                </>
+              ) : (
+                <>
+                  Next Question
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

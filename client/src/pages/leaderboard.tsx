@@ -286,18 +286,27 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="premium-container">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Leaderboard</h1>
-          <p className="text-muted-foreground">See how you rank against others</p>
-        </div>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
-        </Button>
-      </div>
+      <Card className="premium-card glass-morphism animate-slide-up">
+        <CardContent className="p-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                <Trophy className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gradient-primary">Global Leaderboard</h1>
+                <p className="text-foreground-secondary">Compete with learners worldwide</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="premium-button-secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter Rankings
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <div className="grid grid-cols-3 gap-2">
