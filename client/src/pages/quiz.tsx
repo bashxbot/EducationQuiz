@@ -88,7 +88,7 @@ export default function Quiz() {
         body: JSON.stringify({
           class: 'Class 10',
           subject: selectedSubject,
-          topic: selectedTopic || undefined,
+          topic: selectedTopic === 'mixed' ? undefined : selectedTopic || undefined,
           difficulty: selectedDifficulty,
           count: 10
         })
@@ -178,7 +178,7 @@ export default function Quiz() {
     // Save to history
     addQuizResult({
       subject: selectedSubject,
-      topic: selectedTopic || 'Mixed Topics',
+      topic: selectedTopic === 'mixed' || !selectedTopic ? 'Mixed Topics' : selectedTopic,
       score,
       totalQuestions: questions.length,
       timeSpent: timer,
@@ -256,7 +256,7 @@ export default function Quiz() {
                     <SelectValue placeholder="Choose a topic or leave for mixed" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Mixed Topics</SelectItem>
+                    <SelectItem value="mixed">Mixed Topics</SelectItem>
                     {topicsBySubject[selectedSubject]?.map(topic => (
                       <SelectItem key={topic} value={topic}>{topic}</SelectItem>
                     ))}
@@ -461,7 +461,7 @@ export default function Quiz() {
                   <Clock className="h-4 w-4" />
                   {formatTime(timer)}
                 </div>
-                <div>{selectedSubject}: {selectedTopic || 'Mixed Topics'}</div>
+                <div>{selectedSubject}: {selectedTopic === 'mixed' || !selectedTopic ? 'Mixed Topics' : selectedTopic}</div>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={resetQuiz}>
