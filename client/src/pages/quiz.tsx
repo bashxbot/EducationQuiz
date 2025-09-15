@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -164,7 +163,7 @@ export default function Quiz() {
       const sampleQuestions: QuizQuestion[] = [
         {
           id: '1',
-          question: `What is the square root of 144? (${selectedSubject} - ${selectedDifficulty})`,
+          question: `What is the square root of 144? (🎯)`,
           options: ['10', '11', '12', '13'],
           correctAnswer: '12',
           explanation: 'The square root of 144 is 12 because 12 × 12 = 144.',
@@ -173,7 +172,7 @@ export default function Quiz() {
         },
         {
           id: '2',
-          question: `Which of the following is a prime number? (${selectedSubject} - ${selectedDifficulty})`,
+          question: `Which of the following is a prime number? (🏆)`,
           options: ['15', '17', '21', '25'],
           correctAnswer: '17',
           explanation: 'A prime number is a number greater than 1 that has no positive divisors other than 1 and itself. 17 is only divisible by 1 and 17.',
@@ -182,7 +181,7 @@ export default function Quiz() {
         },
         {
           id: '3',
-          question: `What is 2 + 2? (${selectedSubject} - ${selectedDifficulty})`,
+          question: `What is 2 + 2? (🔥)`,
           options: ['3', '4', '5', '6'],
           correctAnswer: '4',
           explanation: 'Basic addition: 2 + 2 = 4',

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +24,14 @@ import {
   Shield,
   RotateCcw,
   Star,
-  Target,
   Flame,
   BookOpen,
   Award,
   Lightbulb,
   CheckCircle,
   AlertTriangle,
-  XCircle
+  XCircle,
+  Target
 } from "lucide-react";
 import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData } from "@/hooks/use-app-storage";
 import { useBadges, useAutoAchievements } from "@/hooks/use-badges";
@@ -311,7 +310,7 @@ export default function Profile() {
               </div>
             ))}
           </div>
-          
+
           {/* Achievements Section */}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 font-display">
