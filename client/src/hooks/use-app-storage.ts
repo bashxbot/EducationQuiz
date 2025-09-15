@@ -128,14 +128,15 @@ export function resetAppData() {
 // Storage hooks
 export function useUserProfile() {
   const defaultProfile: UserProfile = {
-    id: "demo-user",
-    name: "Alex Kumar",
-    email: "alex@school.edu",
-    class: "Class 10",
-    school: "Excellence High School",
-    totalPoints: 1240,
-    currentStreak: 7,
-    joinDate: new Date("2024-03-01").toISOString(),
+    id: "",
+    name: "",
+    email: "",
+    class: "",
+    school: "",
+    profilePicture: "", // Added default for profilePicture
+    totalPoints: 0, // Added default for totalPoints
+    currentStreak: 0, // Added default for currentStreak
+    joinDate: new Date().toISOString(), // Added default for joinDate
   };
 
   const [profile, setProfile] = useState<UserProfile>(() => 
@@ -218,8 +219,13 @@ export function useQuizProgress() {
 }
 
 export function useQuizHistory() {
-  const [history, setHistory] = useState<QuizHistory[]>(() => 
-    safeParseFromStorage(STORAGE_KEYS.QUIZ_HISTORY, z.array(QuizHistorySchema), [])
+  // Define the QuizResult type based on the schema for clarity
+  type QuizResult = z.infer<typeof QuizHistorySchema>;
+
+  const defaultQuizHistory: QuizResult[] = []; // Default to empty array
+
+  const [history, setHistory] = useState<QuizResult[]>(() => 
+    safeParseFromStorage(STORAGE_KEYS.QUIZ_HISTORY, z.array(QuizHistorySchema), defaultQuizHistory)
   );
 
   useEffect(() => {
@@ -227,7 +233,7 @@ export function useQuizHistory() {
   }, [history]);
 
   const addQuizResult = (result: Omit<QuizHistory, "id" | "completedAt">) => {
-    const newResult: QuizHistory = {
+    const newResult: QuizResult = { // Use QuizResult type here
       ...result,
       id: Date.now().toString(),
       completedAt: new Date().toISOString(),
