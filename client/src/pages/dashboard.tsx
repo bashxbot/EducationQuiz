@@ -6,10 +6,24 @@ import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const { data: user } = useQuery({
     queryKey: ["/api/user"],
   });
+
+  // Listen for profile updates
+  useEffect(() => {
+    setCurrentUser(user);
+    
+    const handleProfileUpdate = (event: CustomEvent) => {
+      const updatedProfile = event.detail;
+      setCurrentUser((prev: any) => ({ ...prev, ...updatedProfile }));
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+  }, [user]);
 
   const { data: progress } = useQuery({
     queryKey: ["/api/progress"],
@@ -33,20 +47,20 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-accent p-6 rounded-xl text-white">
         <h2 className="text-xl font-semibold mb-2" data-testid="text-greeting">
-          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {(user as any)?.name || 'Student'}!
+          Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {currentUser?.name || 'Student'}!
         </h2>
         <p className="opacity-90 text-sm" data-testid="text-quote">"{todayQuote}"</p>
         <div className="mt-4 flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-orange-300" />
             <span className="font-medium text-sm" data-testid="text-streak">
-              {(user as any)?.currentStreak || 0} day streak
+              {currentUser?.currentStreak || 0} day streak
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Medal className="h-5 w-5 text-yellow-300" />
             <span className="font-medium text-sm" data-testid="text-points">
-              {(user as any)?.totalPoints || 0} points
+              {currentUser?.totalPoints || 0} points
             </span>
           </div>
         </div>

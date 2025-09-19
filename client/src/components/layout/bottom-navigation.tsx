@@ -16,7 +16,7 @@ export function BottomNavigation() {
   const [location, setLocation] = useLocation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+    <div className="mt-8 p-4">
       <nav className="mx-auto max-w-md premium-nav rounded-2xl border border-border/50 animate-slide-up">
         <div className="flex items-center justify-around py-3 px-2">
           {navItems.map(({ icon: Icon, label, path, color }) => {

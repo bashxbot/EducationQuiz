@@ -148,7 +148,16 @@ export function useUserProfile() {
   }, [profile]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile(prev => ({ ...prev, ...updates }));
+    setProfile(prev => {
+      const newProfile = { ...prev, ...updates };
+      
+      // Trigger a custom event to notify other components
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: newProfile 
+      }));
+      
+      return newProfile;
+    });
   };
 
   return { profile, updateProfile, setProfile };

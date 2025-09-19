@@ -1,10 +1,58 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight, Brain, GraduationCap, Library, FileText, Play } from 'lucide-react';
+import { 
+  Play, 
+  Clock, 
+  BookOpen, 
+  CheckCircle, 
+  XCircle, 
+  RotateCcw, 
+  ChevronLeft, 
+  ChevronRight, 
+  Trophy, 
+  Target,
+  Star,
+  Award,
+  RefreshCw,
+  ArrowRight,
+  ChevronDown,
+  BarChart3,
+  Triangle,
+  TrendingUp,
+  BarChart,
+  Settings,
+  Thermometer,
+  Zap,
+  Search,
+  FlaskConical,
+  Atom,
+  Microscope,
+  Dna,
+  Leaf,
+  TreePine,
+  Code,
+  Binary,
+  Database,
+  Server,
+  PenTool,
+  Edit,
+  Feather,
+  Building,
+  Castle,
+  Factory,
+  Swords,
+  Mountain,
+  Users,
+  DollarSign,
+  MapPin,
+  Brain,
+  GraduationCap,
+  Library,
+  FileText
+} from "lucide-react";
 import { useQuizHistory, useUserProfile } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -29,87 +77,81 @@ interface QuizResults {
 }
 
 const classes = [
-  { id: '6', name: 'Class 6', icon: '📚' },
-  { id: '7', name: 'Class 7', icon: '📖' },
-  { id: '8', name: 'Class 8', icon: '📝' },
-  { id: '9', name: 'Class 9', icon: '🎓' },
-  { id: '10', name: 'Class 10', icon: '🏆' },
-  { id: '11', name: 'Class 11', icon: '🔬' },
-  { id: '12', name: 'Class 12', icon: '🎯' }
+  { id: '6', name: 'Class 6', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '7', name: 'Class 7', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '8', name: 'Class 8', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '9', name: 'Class 9', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '10', name: 'Class 10', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '11', name: 'Class 11', icon: <GraduationCap className="h-7 w-7" /> },
+  { id: '12', name: 'Class 12', icon: <GraduationCap className="h-7 w-7" /> }
 ];
 
 const subjects = [
-  { id: 'mathematics', name: 'Mathematics', icon: '🔢', color: 'from-blue-500 to-cyan-500' },
-  { id: 'physics', name: 'Physics', icon: '⚛️', color: 'from-purple-500 to-pink-500' },
-  { id: 'chemistry', name: 'Chemistry', icon: '🧪', color: 'from-green-500 to-emerald-500' },
-  { id: 'biology', name: 'Biology', icon: '🧬', color: 'from-red-500 to-orange-500' },
-  { id: 'computer-science', name: 'Computer Science', icon: '💻', color: 'from-indigo-500 to-purple-500' },
-  { id: 'english', name: 'English', icon: '📚', color: 'from-yellow-500 to-orange-500' },
-  { id: 'history', name: 'History', icon: '🏛️', color: 'from-amber-600 to-yellow-500' },
-  { id: 'geography', name: 'Geography', icon: '🌍', color: 'from-emerald-500 to-teal-500' }
+  { id: 'mathematics', name: 'Mathematics', icon: <BarChart3 className="h-7 w-7" />, color: 'from-blue-500 to-cyan-500' },
+  { id: 'physics', name: 'Physics', icon: <Thermometer className="h-7 w-7" />, color: 'from-purple-500 to-pink-500' },
+  { id: 'chemistry', name: 'Chemistry', icon: <FlaskConical className="h-7 w-7" />, color: 'from-green-500 to-emerald-500' },
+  { id: 'biology', name: 'Biology', icon: <Dna className="h-7 w-7" />, color: 'from-red-500 to-orange-500' },
+  { id: 'computer-science', name: 'Computer Science', icon: <Code className="h-7 w-7" />, color: 'from-indigo-500 to-purple-500' },
+  { id: 'english', name: 'English', icon: <BookOpen className="h-7 w-7" />, color: 'from-yellow-500 to-orange-500' },
+  { id: 'history', name: 'History', icon: <Building className="h-7 w-7" />, color: 'from-amber-600 to-yellow-500' },
+  { id: 'geography', name: 'Geography', icon: <Mountain className="h-7 w-7" />, color: 'from-emerald-500 to-teal-500' }
 ];
 
-const chaptersBySubject: Record<string, { id: string; name: string; icon: string }[]> = {
+const chaptersBySubject: Record<string, { id: string; name: string; icon: React.ReactNode }[]> = {
   'mathematics': [
-    { id: 'algebra', name: 'Algebra', icon: '🔤' },
-    { id: 'geometry', name: 'Geometry', icon: '📐' },
-    { id: 'calculus', name: 'Calculus', icon: '📊' },
-    { id: 'statistics', name: 'Statistics', icon: '📈' },
-    { id: 'trigonometry', name: 'Trigonometry', icon: '📏' }
+    { id: 'algebra', name: 'Algebra', icon: <BarChart3 className="h-5 w-5" /> },
+    { id: 'geometry', name: 'Geometry', icon: <Triangle className="h-5 w-5" /> },
+    { id: 'calculus', name: 'Calculus', icon: <TrendingUp className="h-5 w-5" /> },
+    { id: 'statistics', name: 'Statistics', icon: <BarChart className="h-5 w-5" /> }
   ],
   'physics': [
-    { id: 'mechanics', name: 'Mechanics', icon: '⚙️' },
-    { id: 'thermodynamics', name: 'Thermodynamics', icon: '🌡️' },
-    { id: 'electromagnetism', name: 'Electromagnetism', icon: '⚡' },
-    { id: 'optics', name: 'Optics', icon: '🔍' },
-    { id: 'modern-physics', name: 'Modern Physics', icon: '🚀' }
+    { id: 'mechanics', name: 'Mechanics', icon: <Settings className="h-5 w-5" /> },
+    { id: 'thermodynamics', name: 'Thermodynamics', icon: <Thermometer className="h-5 w-5" /> },
+    { id: 'electromagnetism', name: 'Electromagnetism', icon: <Zap className="h-5 w-5" /> },
+    { id: 'optics', name: 'Optics', icon: <Search className="h-5 w-5" /> }
   ],
   'chemistry': [
-    { id: 'organic', name: 'Organic Chemistry', icon: '🧪' },
-    { id: 'inorganic', name: 'Inorganic Chemistry', icon: '⚗️' },
-    { id: 'physical', name: 'Physical Chemistry', icon: '🔬' },
-    { id: 'biochemistry', name: 'Biochemistry', icon: '🧬' }
+    { id: 'organic', name: 'Organic Chemistry', icon: <FlaskConical className="h-5 w-5" /> },
+    { id: 'inorganic', name: 'Inorganic Chemistry', icon: <Atom className="h-5 w-5" /> },
+    { id: 'physical', name: 'Physical Chemistry', icon: <Microscope className="h-5 w-5" /> },
+    { id: 'biochemistry', name: 'Biochemistry', icon: <Dna className="h-5 w-5" /> }
   ],
   'biology': [
-    { id: 'cell-biology', name: 'Cell Biology', icon: '🔬' },
-    { id: 'genetics', name: 'Genetics', icon: '🧬' },
-    { id: 'evolution', name: 'Evolution', icon: '🦎' },
-    { id: 'ecology', name: 'Ecology', icon: '🌿' },
-    { id: 'human-biology', name: 'Human Biology', icon: '👤' }
+    { id: 'cell', name: 'Cell Biology', icon: <Microscope className="h-5 w-5" /> },
+    { id: 'genetics', name: 'Genetics', icon: <Dna className="h-5 w-5" /> },
+    { id: 'ecology', name: 'Ecology', icon: <Leaf className="h-5 w-5" /> },
+    { id: 'evolution', name: 'Evolution', icon: <TreePine className="h-5 w-5" /> }
   ],
   'computer-science': [
-    { id: 'programming', name: 'Programming', icon: '💻' },
-    { id: 'data-structures', name: 'Data Structures', icon: '🗂️' },
-    { id: 'algorithms', name: 'Algorithms', icon: '🔄' },
-    { id: 'database', name: 'Database', icon: '🗄️' },
-    { id: 'networks', name: 'Networks', icon: '🌐' }
+    { id: 'programming', name: 'Programming', icon: <Code className="h-5 w-5" /> },
+    { id: 'algorithms', name: 'Algorithms', icon: <Binary className="h-5 w-5" /> },
+    { id: 'data_structures', name: 'Data Structures', icon: <Database className="h-5 w-5" /> },
+    { id: 'databases', name: 'Databases', icon: <Server className="h-5 w-5" /> }
   ],
   'english': [
-    { id: 'grammar', name: 'Grammar', icon: '📝' },
-    { id: 'literature', name: 'Literature', icon: '📖' },
-    { id: 'vocabulary', name: 'Vocabulary', icon: '📚' },
-    { id: 'writing', name: 'Writing', icon: '✍️' },
-    { id: 'reading', name: 'Reading Comprehension', icon: '👓' }
+    { id: 'grammar', name: 'Grammar', icon: <PenTool className="h-5 w-5" /> },
+    { id: 'literature', name: 'Literature', icon: <BookOpen className="h-5 w-5" /> },
+    { id: 'writing', name: 'Writing', icon: <Edit className="h-5 w-5" /> },
+    { id: 'poetry', name: 'Poetry', icon: <Feather className="h-5 w-5" /> }
   ],
   'history': [
-    { id: 'ancient', name: 'Ancient History', icon: '🏛️' },
-    { id: 'medieval', name: 'Medieval History', icon: '🏰' },
-    { id: 'modern', name: 'Modern History', icon: '🏭' },
-    { id: 'world-wars', name: 'World Wars', icon: '⚔️' },
-    { id: 'indian', name: 'Indian History', icon: '🇮🇳' }
+    { id: 'ancient', name: 'Ancient History', icon: <Building className="h-5 w-5" /> },
+    { id: 'medieval', name: 'Medieval History', icon: <Castle className="h-5 w-5" /> },
+    { id: 'modern', name: 'Modern History', icon: <Factory className="h-5 w-5" /> },
+    { id: 'world_wars', name: 'World Wars', icon: <Swords className="h-5 w-5" /> }
   ],
   'geography': [
-    { id: 'physical', name: 'Physical Geography', icon: '🏔️' },
-    { id: 'human', name: 'Human Geography', icon: '👥' },
-    { id: 'economic', name: 'Economic Geography', icon: '💰' },
-    { id: 'political', name: 'Political Geography', icon: '🗺️' }
+    { id: 'physical', name: 'Physical Geography', icon: <Mountain className="h-5 w-5" /> },
+    { id: 'human', name: 'Human Geography', icon: <Users className="h-5 w-5" /> },
+    { id: 'economic', name: 'Economic Geography', icon: <DollarSign className="h-5 w-5" /> },
+    { id: 'political', name: 'Political Geography', icon: <MapPin className="h-5 w-5" /> }
   ]
 };
 
 const difficulties = [
-  { id: 'easy', name: 'Easy', icon: '🟢', description: 'Perfect for beginners' },
-  { id: 'medium', name: 'Medium', icon: '🟡', description: 'Good challenge level' },
-  { id: 'hard', name: 'Hard', icon: '🔴', description: 'Expert level questions' }
+  { id: 'easy', name: 'Easy', icon: <Target className="h-7 w-7" />, description: 'Perfect for beginners' },
+  { id: 'medium', name: 'Medium', icon: <Target className="h-7 w-7" />, description: 'Good challenge level' },
+  { id: 'hard', name: 'Hard', icon: <Target className="h-7 w-7" />, description: 'Expert level questions' }
 ];
 
 export default function Quiz() {
@@ -323,7 +365,7 @@ export default function Quiz() {
                   onClick={() => setSelectedClass(cls.id)}
                   className="h-16 flex flex-col gap-1"
                 >
-                  <span className="text-lg">{cls.icon}</span>
+                  {cls.icon}
                   <span className="text-sm font-medium">{cls.name}</span>
                 </Button>
               ))}
@@ -378,10 +420,12 @@ export default function Quiz() {
                   onClick={() => setSelectedChapter('')}
                   className="w-full justify-start"
                 >
-                  <span className="mr-2">📚</span>
+                  <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center mr-3">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
                   All Chapters (Mixed)
                 </Button>
-                
+
                 <div className="grid grid-cols-1 gap-2">
                   {chaptersBySubject[selectedSubject]?.map(chapter => (
                     <Button
@@ -390,7 +434,9 @@ export default function Quiz() {
                       onClick={() => setSelectedChapter(chapter.id)}
                       className="justify-start"
                     >
-                      <span className="mr-2">{chapter.icon}</span>
+                      <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center mr-3">
+                        {chapter.icon}
+                      </div>
                       {chapter.name}
                     </Button>
                   ))}
@@ -418,9 +464,15 @@ export default function Quiz() {
                     onClick={() => setSelectedDifficulty(diff.id as any)}
                     className="h-20 flex flex-col gap-1"
                   >
-                    <span className="text-xl">{diff.icon}</span>
-                    <span className="font-medium">{diff.name}</span>
-                    <span className="text-xs text-muted-foreground">{diff.description}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
+                        {diff.icon}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{diff.name}</h3>
+                        <p className="text-sm text-muted-foreground">{diff.description}</p>
+                      </div>
+                    </div>
                   </Button>
                 ))}
               </div>
@@ -654,7 +706,7 @@ export default function Quiz() {
                 key={index}
                 variant={selectedAnswer === option ? "default" : "outline"}
                 onClick={() => selectAnswer(option)}
-                className={`w-full justify-start text-left h-auto p-6 premium-button transition-all duration-300 ${
+                className={`w-full justify-start text-left h-auto p-3 ${
                   selectedAnswer === option 
                     ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg transform scale-[1.02]' 
                     : 'hover:scale-[1.01] hover:shadow-md bg-background-soft border-border-subtle'

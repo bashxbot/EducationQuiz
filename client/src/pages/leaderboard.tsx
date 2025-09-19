@@ -118,6 +118,21 @@ export default function Leaderboard() {
   const [selectedProfile, setSelectedProfile] = useState<LeaderboardEntry | null>(null);
   const { profile } = useUserProfile();
 
+  // Listen for profile updates and sync leaderboard
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      const updatedProfile = event.detail;
+      setLeaderboard(prev => prev.map(entry => 
+        entry.id === 'demo-user' 
+          ? { ...entry, name: updatedProfile.name, class: updatedProfile.class, school: updatedProfile.school }
+          : entry
+      ));
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+  }, []);
+
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:

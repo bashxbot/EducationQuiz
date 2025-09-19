@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -42,25 +41,25 @@ function App() {
             <div className="flex flex-col min-h-screen max-w-md mx-auto relative overflow-hidden">
               {/* App background with noise texture */}
               <div className="fixed inset-0 bg-noise opacity-20 pointer-events-none" />
-              
+
               {/* Main app container */}
               <div className="relative z-10 flex flex-col min-h-screen w-full">
                 <Header />
-                
+
                 <main className="flex-1 overflow-y-auto overflow-x-hidden w-full pb-20">
                   <div className="w-full min-h-full">
                     <Router />
                   </div>
                 </main>
-                
+
                 <BottomNavigation />
               </div>
-              
+
               {/* Ambient lighting effects */}
               <div className="fixed top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
               <div className="fixed bottom-0 left-0 w-full h-64 bg-gradient-to-t from-accent/5 to-transparent pointer-events-none" />
             </div>
-            
+
             <Toaster />
           </TooltipProvider>
         </AchievementProvider>
