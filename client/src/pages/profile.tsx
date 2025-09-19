@@ -355,11 +355,11 @@ export default function Profile() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="premium-card border-primary/30 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-md w-full mx-4">
+        <DialogContent className="premium-card border-primary/30 max-w-md">
           <DialogHeader>
             <DialogTitle className="gradient-text font-heading">Settings</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 p-1">
+          <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block font-body">Theme</label>
               <div className="grid grid-cols-2 gap-2">
@@ -367,7 +367,7 @@ export default function Profile() {
                   variant={theme === 'dark' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('dark')}
-                  className="touch-manipulation"
+                  className="w-full"
                 >
                   Dark Mode
                 </Button>
@@ -375,7 +375,7 @@ export default function Profile() {
                   variant={theme === 'system' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('system')}
-                  className="touch-manipulation"
+                  className="w-full"
                 >
                   Auto Mode
                 </Button>
@@ -391,7 +391,7 @@ export default function Profile() {
                 <Button 
                   variant="outline" 
                   onClick={exportData} 
-                  className="w-full justify-start border-primary/30 hover:border-primary touch-manipulation"
+                  className="w-full justify-start border-primary/30 hover:border-primary"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export Learning Data
@@ -401,13 +401,13 @@ export default function Profile() {
                   <AlertDialogTrigger asChild>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive touch-manipulation"
+                      className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Reset All Data
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="premium-card border-destructive/30 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-md w-full mx-4">
+                  <AlertDialogContent className="premium-card border-destructive/30 max-w-md">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-destructive font-heading">Reset All Data</AlertDialogTitle>
                       <AlertDialogDescription className="font-body">
@@ -415,10 +415,10 @@ export default function Profile() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex gap-2">
-                      <AlertDialogCancel className="touch-manipulation">Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={handleResetData} 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/80 touch-manipulation"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
                       >
                         Reset Data
                       </AlertDialogAction>

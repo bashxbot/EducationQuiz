@@ -505,7 +505,7 @@ export default function Leaderboard() {
 
       {/* Filters Dialog */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="premium-card max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <DialogContent className="premium-card max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
@@ -522,7 +522,7 @@ export default function Leaderboard() {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
+                <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                   {subjects.map(subject => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
@@ -539,7 +539,7 @@ export default function Leaderboard() {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
+                <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                   <SelectItem value="weekly">This Week</SelectItem>
                   <SelectItem value="monthly">This Month</SelectItem>
                   <SelectItem value="all-time">All Time</SelectItem>
@@ -556,7 +556,7 @@ export default function Leaderboard() {
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
+                <SelectContent className="max-h-[200px]" position="popper" sideOffset={4}>
                   <SelectItem value="global">Global</SelectItem>
                   <SelectItem value="school">My School</SelectItem>
                   <SelectItem value="class">My Class</SelectItem>

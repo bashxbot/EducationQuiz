@@ -529,15 +529,19 @@ input, select, button, [role="button"], [role="combobox"] {
 /* Fix for dropdown menus and dialogs */
 [data-radix-popper-content-wrapper] {
   z-index: 200 !important;
+  position: fixed !important;
 }
 
 [data-radix-select-content] {
   z-index: 200 !important;
   position: fixed !important;
+  will-change: auto !important;
 }
 
 [data-radix-dialog-overlay] {
   z-index: 50 !important;
+  position: fixed !important;
+  inset: 0 !important;
 }
 
 [data-radix-dialog-content] {
@@ -548,6 +552,7 @@ input, select, button, [role="button"], [role="combobox"] {
   max-width: calc(100vw - 2rem) !important;
   max-height: calc(100vh - 2rem) !important;
   z-index: 100 !important;
+  pointer-events: auto !important;
 }
 
 /* Prevent layout shifts when dropdowns open */
@@ -556,13 +561,35 @@ input, select, button, [role="button"], [role="combobox"] {
   z-index: 1;
 }
 
-[data-radix-select-content] {
-  will-change: auto !important;
+[data-radix-select-viewport] {
+  position: relative;
+  max-height: inherit;
+  overflow-y: auto;
 }
 
 /* Ensure stable positioning */
 .premium-card {
   contain: layout;
+  will-change: auto;
+}
+
+/* Stable dialog positioning */
+[role="dialog"] {
+  position: fixed !important;
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* Fix select content positioning within dialogs */
+[data-radix-select-content][data-side="bottom"] {
+  transform-origin: top !important;
+}
+
+[data-radix-select-content][data-side="top"] {
+  transform-origin: bottom !important;
 }
 
 /* Prevent viewport changes */
