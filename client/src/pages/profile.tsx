@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,7 +86,7 @@ export default function Profile() {
   const handleSaveProfile = async () => {
     // Update profile locally and globally
     updateProfile(editedProfile);
-    
+
     // Also send to server to update globally
     try {
       await fetch('/api/user/profile', {
@@ -98,7 +97,7 @@ export default function Profile() {
     } catch (error) {
       console.error('Error updating profile globally:', error);
     }
-    
+
     setIsEditing(false);
   };
 
@@ -150,7 +149,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="premium-container">
+    <div className="p-4 space-y-6">
       {/* Profile Header */}
       <Card className="premium-card glass-morphism animate-slide-up">
         <CardContent className="p-8">

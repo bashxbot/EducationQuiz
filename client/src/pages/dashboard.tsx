@@ -44,7 +44,7 @@ export default function Dashboard() {
   const todayQuote = motivationalQuotes[new Date().getDay() % motivationalQuotes.length];
 
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="p-4 space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-accent p-6 rounded-xl text-white">
         <h2 className="text-xl font-semibold mb-2" data-testid="text-greeting">

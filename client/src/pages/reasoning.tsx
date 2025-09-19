@@ -24,7 +24,8 @@ import {
   Timer,
   Play,
   Settings2,
-  Trophy
+  Trophy,
+  ChevronRight
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReasoningChallenge } from "@shared/schema";
@@ -121,7 +122,7 @@ export default function Reasoning() {
     setQuizMode(true);
     setCurrentQuizIndex(0);
     setQuizAnswers([]);
-    
+
     // Generate multiple questions
     const questions = [];
     for (let i = 0; i < count; i++) {
@@ -176,7 +177,7 @@ export default function Reasoning() {
 
   if (showResult && challengeResult) {
     return (
-      <div className="p-4 space-y-6 pb-20 premium-container">
+      <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-gradient-primary">
@@ -224,7 +225,7 @@ export default function Reasoning() {
 
   if (currentChallenge) {
     return (
-      <div className="p-4 space-y-6 pb-20 premium-container">
+      <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -273,7 +274,7 @@ export default function Reasoning() {
   // Mode selection screen
   if (!currentChallenge && !quizMode && !selectedMode) {
     return (
-      <div className="p-4 space-y-6 pb-20 premium-container">
+      <div className="p-4 space-y-6 premium-container">
         {/* Header */}
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardContent className="p-8">
@@ -344,7 +345,7 @@ export default function Reasoning() {
   // Configuration screen for targeted practice and quiz
   if (showModeSelection && !currentChallenge && !quizMode) {
     return (
-      <div className="p-4 space-y-6 pb-20 premium-container">
+      <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -420,7 +421,7 @@ export default function Reasoning() {
 
   // Render the main dashboard-like layout
   return (
-    <div className="p-4 space-y-6 pb-20 premium-container">
+    <div className="p-4 space-y-6 premium-container">
       {/* Header */}
       <Card className="premium-card glass-morphism animate-slide-up">
         <CardContent className="p-8">

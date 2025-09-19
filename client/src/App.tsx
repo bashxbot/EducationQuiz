@@ -46,13 +46,15 @@ function App() {
               <div className="relative z-10 flex flex-col min-h-screen w-full">
                 <Header />
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden w-full pb-20">
-                  <div className="w-full min-h-full">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden w-full">
+                  <div className="w-full min-h-full pb-24">
                     <Router />
                   </div>
                 </main>
 
-                <BottomNavigation />
+                <div className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto">
+                  <BottomNavigation />
+                </div>
               </div>
 
               {/* Ambient lighting effects */}

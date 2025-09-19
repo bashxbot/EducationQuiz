@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -194,7 +193,7 @@ export default function Chat() {
                 <p className="text-sm text-foreground-secondary">Ask me anything about your studies!</p>
               </div>
             </div>
-            
+
             {messages.length > 0 && (
               <Button variant="outline" size="sm" onClick={handleClearChat}>
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -220,7 +219,7 @@ export default function Chat() {
                     I'm here to help you with your studies. Ask me questions about any subject, get explanations, or request help with homework.
                   </p>
                 </div>
-                
+
                 {/* Suggested Questions */}
                 <div className="w-full max-w-2xl">
                   <h4 className="text-sm font-medium text-muted-foreground mb-3 text-center">Try asking:</h4>

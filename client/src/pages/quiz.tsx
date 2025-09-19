@@ -3,16 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { 
-  Play, 
-  Clock, 
-  BookOpen, 
-  CheckCircle, 
-  XCircle, 
-  RotateCcw, 
-  ChevronLeft, 
-  ChevronRight, 
-  Trophy, 
+import {
+  Play,
+  Clock,
+  BookOpen,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Trophy,
   Target,
   Star,
   Award,
@@ -319,7 +319,7 @@ export default function Quiz() {
   };
 
   const retryWrongOnly = () => {
-    const wrongQuestions = questions.filter((question, index) => 
+    const wrongQuestions = questions.filter((question, index) =>
       userAnswers[index] !== question.correctAnswer
     );
     setQuestions(wrongQuestions);
@@ -482,8 +482,8 @@ export default function Quiz() {
 
         {/* Start Quiz Button */}
         {selectedClass && selectedSubject && (
-          <Button 
-            onClick={generateQuiz} 
+          <Button
+            onClick={generateQuiz}
             disabled={isLoading}
             className="w-full h-14 text-lg font-semibold premium-button animate-slide-up"
             loading={isLoading}
@@ -504,7 +504,7 @@ export default function Quiz() {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   if (quizMode === 'results') {
-    const wrongQuestions = questions.filter((question, index) => 
+    const wrongQuestions = questions.filter((question, index) =>
       userAnswers[index] !== question.correctAnswer
     );
 
@@ -626,8 +626,8 @@ export default function Quiz() {
             </Card>
 
             <div className="flex justify-between">
-              <Button 
-                onClick={prevQuestion} 
+              <Button
+                onClick={prevQuestion}
                 disabled={currentQuestionIndex === 0}
                 variant="outline"
               >
@@ -677,7 +677,7 @@ export default function Quiz() {
                 Question {currentQuestionIndex + 1} of {questions.length}
               </div>
               <div className="w-32 h-3 bg-background-soft rounded-full overflow-hidden shadow-inner">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500 ease-out shadow-sm"
                   style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                 ></div>
@@ -707,8 +707,8 @@ export default function Quiz() {
                 variant={selectedAnswer === option ? "default" : "outline"}
                 onClick={() => selectAnswer(option)}
                 className={`w-full justify-start text-left h-auto p-3 ${
-                  selectedAnswer === option 
-                    ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg transform scale-[1.02]' 
+                  selectedAnswer === option
+                    ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg transform scale-[1.02]'
                     : 'hover:scale-[1.01] hover:shadow-md bg-background-soft border-border-subtle'
                 }`}
               >
@@ -723,8 +723,8 @@ export default function Quiz() {
           </div>
 
           <div className="flex justify-between pt-6 border-t border-border-subtle">
-            <Button 
-              onClick={prevQuestion} 
+            <Button
+              onClick={prevQuestion}
               disabled={currentQuestionIndex === 0}
               variant="outline"
               className="premium-button-secondary"
@@ -732,8 +732,8 @@ export default function Quiz() {
               <ChevronLeft className="h-4 w-4 mr-2" />
               Previous
             </Button>
-            <Button 
-              onClick={nextQuestion} 
+            <Button
+              onClick={nextQuestion}
               disabled={!selectedAnswer}
               className={`premium-button ${!selectedAnswer ? 'opacity-50' : 'animate-pulse-glow'}`}
             >
