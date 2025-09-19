@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ export default function Dashboard() {
   // Listen for profile updates
   useEffect(() => {
     setCurrentUser(user);
-    
+
     const handleProfileUpdate = (event: CustomEvent) => {
       const updatedProfile = event.detail;
       setCurrentUser((prev: any) => ({ ...prev, ...updatedProfile }));

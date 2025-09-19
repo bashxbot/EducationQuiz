@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { Trophy, Medal, Crown, Target, Zap, Calendar, Filter, Users, User, Star, TrendingUp, Award } from 'lucide-react';
+import { Trophy, Medal, Crown, Target, Zap, Calendar, Filter, Users, User, Star, TrendingUp, Award, Settings } from 'lucide-react';
 import { useUserProfile } from '../hooks/use-app-storage';
 
 interface LeaderboardEntry {
@@ -35,96 +35,108 @@ const subjects = [
   'Computer Science', 'English', 'History', 'Geography'
 ];
 
-// Mock leaderboard data
-const mockLeaderboard: LeaderboardEntry[] = [
-  {
-    id: '1',
-    name: 'Priya Sharma',
-    class: 'Class 10',
-    school: 'Delhi Public School',
-    totalPoints: 2850,
-    accuracy: 94,
-    streak: 15,
-    badges: 12,
-    rank: 1,
-    change: 0
-  },
-  {
-    id: '2',
-    name: 'Arjun Patel',
-    class: 'Class 10',
-    school: 'Kendriya Vidyalaya',
-    totalPoints: 2720,
-    accuracy: 91,
-    streak: 8,
-    badges: 10,
-    rank: 2,
-    change: 1
-  },
-  {
-    id: '3',
-    name: 'Sneha Gupta',
-    class: 'Class 10',
-    school: 'St. Mary\'s School',
-    totalPoints: 2680,
-    accuracy: 89,
-    streak: 12,
-    badges: 9,
-    rank: 3,
-    change: -1
-  }
-];
+// Mock leaderboard data with updated profile sync
+const createMockLeaderboard = (userProfile: any): LeaderboardEntry[] => {
+  const baseData: LeaderboardEntry[] = [
+    {
+      id: '1',
+      name: 'Priya Sharma',
+      class: 'Class 10',
+      school: 'Delhi Public School',
+      totalPoints: 2850,
+      accuracy: 94,
+      streak: 15,
+      badges: 12,
+      rank: 1,
+      change: 0
+    },
+    {
+      id: '2',
+      name: 'Arjun Patel',
+      class: 'Class 10',
+      school: 'Kendriya Vidyalaya',
+      totalPoints: 2720,
+      accuracy: 91,
+      streak: 8,
+      badges: 10,
+      rank: 2,
+      change: 1
+    },
+    {
+      id: '3',
+      name: 'Sneha Gupta',
+      class: 'Class 10',
+      school: 'St. Mary\'s School',
+      totalPoints: 2680,
+      accuracy: 89,
+      streak: 12,
+      badges: 9,
+      rank: 3,
+      change: -1
+    }
+  ];
 
-// Generate more mock entries for demonstration
-for (let i = 4; i <= 100; i++) {
-  if (i === 24) {
-    mockLeaderboard.push({
-      id: 'demo-user',
-      name: 'Alex Kumar',
-      class: 'Class 10',
-      school: 'Excellence High School',
-      totalPoints: 1240,
-      accuracy: 85,
-      streak: 7,
-      badges: 5,
-      rank: 24,
-      change: 3
-    });
-  } else {
-    mockLeaderboard.push({
-      id: `user-${i}`,
-      name: `Student ${i}`,
-      class: 'Class 10',
-      school: 'Various Schools',
-      totalPoints: Math.max(2650 - (i * 25) + Math.random() * 100, 500),
-      accuracy: Math.floor(Math.random() * 30 + 70),
-      streak: Math.floor(Math.random() * 20),
-      badges: Math.floor(Math.random() * 15),
-      rank: i <= 23 ? i : i + 1,
-      change: Math.floor(Math.random() * 6) - 3
-    });
+  // Generate additional entries
+  for (let i = 4; i <= 100; i++) {
+    if (i === 24) {
+      baseData.push({
+        id: 'demo-user',
+        name: userProfile?.name || 'Alex Kumar',
+        class: userProfile?.class || 'Class 10',
+        school: userProfile?.school || 'Excellence High School',
+        totalPoints: userProfile?.totalPoints || 1240,
+        accuracy: 85,
+        streak: userProfile?.currentStreak || 7,
+        badges: 5,
+        rank: 24,
+        change: 3
+      });
+    } else {
+      baseData.push({
+        id: `user-${i}`,
+        name: `Student ${i}`,
+        class: `Class ${8 + Math.floor(Math.random() * 5)}`,
+        school: 'Various Schools',
+        totalPoints: Math.max(2650 - (i * 25) + Math.random() * 100, 500),
+        accuracy: Math.floor(Math.random() * 30 + 70),
+        streak: Math.floor(Math.random() * 20),
+        badges: Math.floor(Math.random() * 15),
+        rank: i <= 23 ? i : i + 1,
+        change: Math.floor(Math.random() * 6) - 3
+      });
+    }
   }
-}
+
+  return baseData.sort((a, b) => a.rank - b.rank);
+};
 
 export default function Leaderboard() {
+  const { profile } = useUserProfile();
   const [activeTab, setActiveTab] = useState('global');
   const [filters, setFilters] = useState<LeaderboardFilters>({
     subject: 'All Subjects',
     timeframe: 'all-time',
     scope: 'global'
   });
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(mockLeaderboard);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => createMockLeaderboard(profile));
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<LeaderboardEntry | null>(null);
-  const { profile } = useUserProfile();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Listen for profile updates and sync leaderboard
+  // Sync leaderboard with profile updates
   useEffect(() => {
     const handleProfileUpdate = (event: CustomEvent) => {
       const updatedProfile = event.detail;
       setLeaderboard(prev => prev.map(entry => 
         entry.id === 'demo-user' 
-          ? { ...entry, name: updatedProfile.name, class: updatedProfile.class, school: updatedProfile.school }
+          ? { 
+              ...entry, 
+              name: updatedProfile.name, 
+              class: updatedProfile.class, 
+              school: updatedProfile.school,
+              totalPoints: updatedProfile.totalPoints,
+              streak: updatedProfile.currentStreak
+            }
           : entry
       ));
     };
@@ -132,6 +144,13 @@ export default function Leaderboard() {
     window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
     return () => window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
   }, []);
+
+  // Update leaderboard when profile changes
+  useEffect(() => {
+    if (profile) {
+      setLeaderboard(createMockLeaderboard(profile));
+    }
+  }, [profile]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -171,25 +190,43 @@ export default function Leaderboard() {
     ).sort((a, b) => a.rank - b.rank);
   };
 
-  const filterLeaderboard = (newFilters: Partial<LeaderboardFilters>) => {
+  const applyFilters = async (newFilters: Partial<LeaderboardFilters>) => {
+    setIsLoading(true);
     setFilters(prev => ({ ...prev, ...newFilters }));
-    // Simulate filtering by randomizing slightly
-    const shuffled = [...mockLeaderboard].sort(() => Math.random() - 0.5);
-    setLeaderboard(shuffled);
-  };
-
-  const viewProfile = (entry: LeaderboardEntry) => {
-    setSelectedProfile(entry);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Create filtered data based on current profile
+    const filteredData = createMockLeaderboard(profile);
+    
+    // Apply some filtering logic for demonstration
+    if (newFilters.scope === 'school' && profile?.school) {
+      const schoolData = filteredData.filter(entry => 
+        entry.school === profile.school || entry.id === 'demo-user'
+      );
+      setLeaderboard(schoolData);
+    } else if (newFilters.scope === 'class' && profile?.class) {
+      const classData = filteredData.filter(entry => 
+        entry.class === profile.class || entry.id === 'demo-user'
+      );
+      setLeaderboard(classData);
+    } else {
+      setLeaderboard(filteredData);
+    }
+    
+    setIsLoading(false);
+    setShowFilters(false);
   };
 
   const TopThreeDisplay = () => {
     const topThree = getTopThree();
     
     return (
-      <div className="flex justify-center items-end gap-6 p-6 bg-gradient-to-r from-background via-surface to-background rounded-lg">
+      <div className="flex justify-center items-end gap-6 p-8 bg-gradient-to-br from-background via-surface to-background rounded-xl">
         {/* 2nd Place */}
         {topThree[1] && (
-          <div className="text-center">
+          <div className="text-center transform hover:scale-105 transition-transform">
             <div className="relative mb-4">
               <div className="w-20 h-24 bg-gradient-to-t from-gray-400 to-gray-300 rounded-t-xl flex items-end justify-center pb-3 shadow-lg">
                 <span className="text-2xl font-bold text-white">2</span>
@@ -201,16 +238,16 @@ export default function Leaderboard() {
               </Avatar>
             </div>
             <h3 className="font-semibold text-sm">{topThree[1].name}</h3>
-            <p className="text-xs text-muted-foreground">{topThree[1].totalPoints} pts</p>
-            <Badge variant="secondary" className="mt-1">{topThree[1].accuracy}%</Badge>
+            <p className="text-xs text-muted-foreground">{topThree[1].totalPoints.toLocaleString()} pts</p>
+            <Badge variant="secondary" className="mt-1 text-xs">{topThree[1].accuracy}%</Badge>
           </div>
         )}
 
         {/* 1st Place */}
         {topThree[0] && (
-          <div className="text-center">
+          <div className="text-center transform hover:scale-105 transition-transform">
             <div className="relative mb-4">
-              <div className="w-24 h-32 bg-gradient-to-t from-yellow-400 to-yellow-300 rounded-t-xl flex items-end justify-center pb-3 shadow-xl">
+              <div className="w-24 h-32 bg-gradient-to-t from-yellow-400 to-yellow-300 rounded-t-xl flex items-end justify-center pb-3 shadow-xl animate-pulse-glow">
                 <Crown className="h-8 w-8 text-white" />
               </div>
               <Avatar className="w-20 h-20 mx-auto -mt-10 border-4 border-yellow-400 shadow-xl">
@@ -220,14 +257,14 @@ export default function Leaderboard() {
               </Avatar>
             </div>
             <h3 className="font-semibold">{topThree[0].name}</h3>
-            <p className="text-sm text-muted-foreground">{topThree[0].totalPoints} pts</p>
+            <p className="text-sm text-muted-foreground">{topThree[0].totalPoints.toLocaleString()} pts</p>
             <Badge className="mt-1">{topThree[0].accuracy}%</Badge>
           </div>
         )}
 
         {/* 3rd Place */}
         {topThree[2] && (
-          <div className="text-center">
+          <div className="text-center transform hover:scale-105 transition-transform">
             <div className="relative mb-4">
               <div className="w-20 h-20 bg-gradient-to-t from-amber-600 to-amber-500 rounded-t-xl flex items-end justify-center pb-3 shadow-lg">
                 <span className="text-2xl font-bold text-white">3</span>
@@ -239,8 +276,8 @@ export default function Leaderboard() {
               </Avatar>
             </div>
             <h3 className="font-semibold text-sm">{topThree[2].name}</h3>
-            <p className="text-xs text-muted-foreground">{topThree[2].totalPoints} pts</p>
-            <Badge variant="secondary" className="mt-1">{topThree[2].accuracy}%</Badge>
+            <p className="text-xs text-muted-foreground">{topThree[2].totalPoints.toLocaleString()} pts</p>
+            <Badge variant="secondary" className="mt-1 text-xs">{topThree[2].accuracy}%</Badge>
           </div>
         )}
       </div>
@@ -249,17 +286,17 @@ export default function Leaderboard() {
 
   const LeaderboardEntry = ({ entry, showRank = true }: { entry: LeaderboardEntry; showRank?: boolean }) => (
     <div 
-      className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-200 hover:bg-surface/50 hover:border-primary/30 ${
-        entry.id === 'demo-user' ? 'bg-primary/5 border-primary/20' : 'bg-background border-border'
+      className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:bg-surface/50 hover:border-primary/30 hover:shadow-md ${
+        entry.id === 'demo-user' ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-card border-border'
       }`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0 flex-1">
         {showRank && (
-          <div className="w-10 flex justify-center">
+          <div className="w-10 flex justify-center flex-shrink-0">
             {getRankIcon(entry.rank)}
           </div>
         )}
-        <Avatar className="w-12 h-12 border-2 border-border">
+        <Avatar className="w-12 h-12 border-2 border-border flex-shrink-0">
           <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-semibold">
             {entry.name.charAt(0)}
           </AvatarFallback>
@@ -273,13 +310,13 @@ export default function Leaderboard() {
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        <div className="text-right min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="text-right">
+          <div className="flex items-center gap-2 mb-1 justify-end">
             <Trophy className="h-4 w-4 text-yellow-500" />
-            <span className="font-bold text-foreground">{entry.totalPoints}</span>
+            <span className="font-bold text-foreground">{entry.totalPoints.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
             <span className="flex items-center gap-1">
               <Target className="h-3 w-3" />
               {entry.accuracy}%
@@ -297,8 +334,8 @@ export default function Leaderboard() {
             <Button 
               size="sm" 
               variant="ghost" 
-              className="h-8 w-8 p-0"
-              onClick={() => viewProfile(entry)}
+              className="h-8 w-8 p-0 hover:bg-primary/10"
+              onClick={() => setSelectedProfile(entry)}
             >
               <User className="h-4 w-4" />
             </Button>
@@ -309,11 +346,11 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="premium-container">
-      {/* Header */}
+    <div className="premium-container space-y-6">
+      {/* Header with Improved Filters */}
       <Card className="premium-card glass-morphism animate-slide-up">
         <CardContent className="p-8">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
                 <Trophy className="h-7 w-7 text-white" />
@@ -323,62 +360,59 @@ export default function Leaderboard() {
                 <p className="text-foreground-secondary">Compete with learners worldwide</p>
               </div>
             </div>
-            <Dialog open={showFilters} onOpenChange={setShowFilters}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="premium-button-secondary">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter Rankings
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="premium-card">
-                <DialogHeader>
-                  <DialogTitle>Filter Rankings</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Subject</label>
-                    <Select value={filters.subject} onValueChange={(value) => filterLeaderboard({ subject: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(subject => (
-                          <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Time Period</label>
-                    <Select value={filters.timeframe} onValueChange={(value: any) => filterLeaderboard({ timeframe: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">This Week</SelectItem>
-                        <SelectItem value="monthly">This Month</SelectItem>
-                        <SelectItem value="all-time">All Time</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* Improved Filter Section */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Settings className="h-4 w-4" />
+                <span>Filters:</span>
+              </div>
+              
+              <Select 
+                value={filters.subject} 
+                onValueChange={(value) => applyFilters({ subject: value })}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(subject => (
+                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Scope</label>
-                    <Select value={filters.scope} onValueChange={(value: any) => filterLeaderboard({ scope: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="global">Global</SelectItem>
-                        <SelectItem value="school">My School</SelectItem>
-                        <SelectItem value="class">My Class</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+              <Select 
+                value={filters.timeframe} 
+                onValueChange={(value: any) => applyFilters({ timeframe: value })}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Week</SelectItem>
+                  <SelectItem value="monthly">Month</SelectItem>
+                  <SelectItem value="all-time">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select 
+                value={filters.scope} 
+                onValueChange={(value: any) => applyFilters({ scope: value })}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global</SelectItem>
+                  <SelectItem value="school">School</SelectItem>
+                  <SelectItem value="class">Class</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -391,29 +425,48 @@ export default function Leaderboard() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="global">Global Rankings</TabsTrigger>
-          <TabsTrigger value="nearby">Nearby</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="global" className="flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Global Rankings
+          </TabsTrigger>
+          <TabsTrigger value="nearby" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Nearby
+          </TabsTrigger>
+          <TabsTrigger value="friends" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Friends
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="global" className="space-y-4">
-          {/* Rankings Box */}
+          {/* Main Rankings Container - Fixed Height with Scroll */}
           <Card className="premium-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Top 100 Rankings
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Top 100 Rankings
+                </div>
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    Filtering...
+                  </div>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[400px] px-6 pb-6">
-                <div className="space-y-2">
-                  {leaderboard.slice(0, 100).map((entry, index) => (
-                    <LeaderboardEntry key={entry.id} entry={entry} />
-                  ))}
-                </div>
-              </ScrollArea>
+              <div className="border-t border-border">
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-2 p-6">
+                    {leaderboard.slice(0, 100).map((entry, index) => (
+                      <LeaderboardEntry key={`${entry.id}-${index}`} entry={entry} />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -427,8 +480,8 @@ export default function Leaderboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {getNearbyUsers().map(entry => (
-                <LeaderboardEntry key={entry.id} entry={entry} />
+              {getNearbyUsers().map((entry, index) => (
+                <LeaderboardEntry key={`nearby-${entry.id}-${index}`} entry={entry} />
               ))}
             </CardContent>
           </Card>
@@ -438,56 +491,63 @@ export default function Leaderboard() {
           <Card className="premium-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <Star className="h-5 w-5" />
                 Friends Leaderboard
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-2">No Friends Yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect with classmates to see how you compare!
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-surface flex items-center justify-center">
+                <Users className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">No Friends Yet</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                Connect with classmates and friends to see how you compare! Challenge them to beat your scores.
               </p>
-              <Button variant="outline">Find Friends</Button>
+              <Button variant="outline" className="premium-button-secondary">
+                <Users className="h-4 w-4 mr-2" />
+                Find Friends
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Current User Stats */}
+      {/* Enhanced Current User Stats */}
       {getCurrentUserEntry() && (
         <Card className="premium-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Star className="h-5 w-5" />
-              Your Performance
+              Your Performance Summary
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <LeaderboardEntry entry={getCurrentUserEntry()!} showRank={false} />
-            <div className="mt-4 p-4 bg-surface/50 rounded-lg border border-border">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-xl font-bold text-primary">{getCurrentUserEntry()?.badges}</div>
-                  <div className="text-xs text-muted-foreground">Badges</div>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-green-600">{getCurrentUserEntry()?.accuracy}%</div>
-                  <div className="text-xs text-muted-foreground">Accuracy</div>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-orange-600">{getCurrentUserEntry()?.streak}</div>
-                  <div className="text-xs text-muted-foreground">Streak</div>
-                </div>
+          <CardContent className="space-y-4">
+            <LeaderboardEntry entry={getCurrentUserEntry()!} showRank={true} />
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                <div className="text-2xl font-bold text-primary">{getCurrentUserEntry()?.badges}</div>
+                <div className="text-xs text-muted-foreground mt-1">Badges Earned</div>
+              </div>
+              <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                <div className="text-2xl font-bold text-green-600">{getCurrentUserEntry()?.accuracy}%</div>
+                <div className="text-xs text-muted-foreground mt-1">Accuracy</div>
+              </div>
+              <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                <div className="text-2xl font-bold text-orange-600">{getCurrentUserEntry()?.streak}</div>
+                <div className="text-xs text-muted-foreground mt-1">Day Streak</div>
+              </div>
+              <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                <div className="text-2xl font-bold text-blue-600">#{getCurrentUserEntry()?.rank}</div>
+                <div className="text-xs text-muted-foreground mt-1">Global Rank</div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Profile Dialog */}
+      {/* Enhanced Profile Dialog */}
       <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
-        <DialogContent className="premium-card">
+        <DialogContent className="premium-card max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
@@ -495,33 +555,53 @@ export default function Leaderboard() {
                   {selectedProfile?.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              {selectedProfile?.name}
+              <div>
+                <div>{selectedProfile?.name}</div>
+                <div className="text-sm text-muted-foreground font-normal">
+                  Rank #{selectedProfile?.rank}
+                </div>
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedProfile && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-surface/50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{selectedProfile.rank}</div>
-                  <div className="text-sm text-muted-foreground">Rank</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                  <div className="text-xl font-bold text-primary">#{selectedProfile.rank}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Global Rank</div>
                 </div>
-                <div className="text-center p-3 bg-surface/50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-500">{selectedProfile.totalPoints}</div>
-                  <div className="text-sm text-muted-foreground">Points</div>
+                <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                  <div className="text-xl font-bold text-orange-500">{selectedProfile.totalPoints.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Total Points</div>
                 </div>
-                <div className="text-center p-3 bg-surface/50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-500">{selectedProfile.accuracy}%</div>
-                  <div className="text-sm text-muted-foreground">Accuracy</div>
+                <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                  <div className="text-xl font-bold text-green-500">{selectedProfile.accuracy}%</div>
+                  <div className="text-xs text-muted-foreground mt-1">Accuracy</div>
                 </div>
-                <div className="text-center p-3 bg-surface/50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-500">{selectedProfile.streak}</div>
-                  <div className="text-sm text-muted-foreground">Streak</div>
+                <div className="text-center p-4 bg-surface/50 rounded-lg border border-border">
+                  <div className="text-xl font-bold text-blue-500">{selectedProfile.streak}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Day Streak</div>
                 </div>
               </div>
-              <div className="p-3 bg-surface/50 rounded-lg">
-                <p className="text-sm"><strong>Class:</strong> {selectedProfile.class}</p>
-                <p className="text-sm"><strong>School:</strong> {selectedProfile.school}</p>
-                <p className="text-sm"><strong>Badges:</strong> {selectedProfile.badges}</p>
+              <div className="p-4 bg-surface/50 rounded-lg border border-border space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Class:</span>
+                  <span className="font-medium">{selectedProfile.class}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">School:</span>
+                  <span className="font-medium">{selectedProfile.school}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Badges:</span>
+                  <span className="font-medium">{selectedProfile.badges} earned</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Rank Change:</span>
+                  <span className={`font-medium ${selectedProfile.change > 0 ? 'text-green-600' : selectedProfile.change < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    {selectedProfile.change > 0 ? '+' : ''}{selectedProfile.change === 0 ? 'No change' : selectedProfile.change}
+                  </span>
+                </div>
               </div>
             </div>
           )}
