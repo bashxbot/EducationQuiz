@@ -284,8 +284,8 @@ export default function Reasoning() {
                   <Lightbulb className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gradient-primary">Logical Reasoning</h1>
-                  <p className="text-foreground-secondary">Choose your reasoning challenge type</p>
+                  <h1 className="text-xl font-bold text-gradient-primary">Logical Reasoning</h1>
+                  <p className="text-sm text-foreground-secondary">Choose your reasoning challenge type</p>
                 </div>
               </div>
             </div>
@@ -431,8 +431,8 @@ export default function Reasoning() {
                 <Lightbulb className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gradient-primary">Logical Reasoning</h1>
-                <p className="text-foreground-secondary">Sharpen your analytical thinking skills</p>
+                <h1 className="text-xl font-bold text-gradient-primary">Logical Reasoning</h1>
+                <p className="text-sm text-foreground-secondary">Sharpen your analytical thinking skills</p>
               </div>
             </div>
             <Button onClick={() => startChallenge("medium")} size="sm" className="premium-button animate-pulse-glow">

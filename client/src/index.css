@@ -96,6 +96,9 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
+  zoom: 1;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 /* Premium Background with Dynamic Gradients */

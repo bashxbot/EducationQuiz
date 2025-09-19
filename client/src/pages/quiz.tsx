@@ -462,16 +462,14 @@ export default function Quiz() {
                     key={diff.id}
                     variant={selectedDifficulty === diff.id ? "default" : "outline"}
                     onClick={() => setSelectedDifficulty(diff.id as any)}
-                    className="h-20 flex flex-col gap-1"
+                    className="h-16 flex flex-col gap-1 p-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
-                        {diff.icon}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{diff.name}</h3>
-                        <p className="text-sm text-muted-foreground">{diff.description}</p>
-                      </div>
+                    <div className="w-6 h-6 rounded-lg bg-surface flex items-center justify-center">
+                      {React.cloneElement(diff.icon as React.ReactElement, { className: "h-4 w-4" })}
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-sm font-medium">{diff.name}</h3>
+                      <p className="text-xs text-muted-foreground">{diff.description}</p>
                     </div>
                   </Button>
                 ))}

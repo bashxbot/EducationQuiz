@@ -237,7 +237,7 @@ export default function Leaderboard() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-semibold text-sm">{topThree[1].name}</h3>
+            <h3 className="text-xs font-medium">{topThree[1].name}</h3>
             <p className="text-xs text-muted-foreground">{topThree[1].totalPoints.toLocaleString()} pts</p>
             <Badge variant="secondary" className="mt-1 text-xs">{topThree[1].accuracy}%</Badge>
           </div>
@@ -256,8 +256,8 @@ export default function Leaderboard() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-semibold">{topThree[0].name}</h3>
-            <p className="text-sm text-muted-foreground">{topThree[0].totalPoints.toLocaleString()} pts</p>
+            <h3 className="text-sm font-medium">{topThree[0].name}</h3>
+            <p className="text-xs text-muted-foreground">{topThree[0].totalPoints.toLocaleString()} pts</p>
             <Badge className="mt-1">{topThree[0].accuracy}%</Badge>
           </div>
         )}
@@ -275,7 +275,7 @@ export default function Leaderboard() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <h3 className="font-semibold text-sm">{topThree[2].name}</h3>
+            <h3 className="text-xs font-medium">{topThree[2].name}</h3>
             <p className="text-xs text-muted-foreground">{topThree[2].totalPoints.toLocaleString()} pts</p>
             <Badge variant="secondary" className="mt-1 text-xs">{topThree[2].accuracy}%</Badge>
           </div>
@@ -303,10 +303,10 @@ export default function Leaderboard() {
         </Avatar>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate">{entry.name}</h3>
+            <h3 className="text-sm font-medium text-foreground truncate">{entry.name}</h3>
             {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
           </div>
-          <p className="text-sm text-muted-foreground truncate">{entry.class} • {entry.school}</p>
+          <p className="text-xs text-muted-foreground truncate">{entry.class} • {entry.school}</p>
         </div>
       </div>
       
@@ -361,58 +361,16 @@ export default function Leaderboard() {
               </div>
             </div>
 
-            {/* Improved Filter Section */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Settings className="h-4 w-4" />
-                <span>Filters:</span>
-              </div>
-              
-              <Select 
-                value={filters.subject} 
-                onValueChange={(value) => applyFilters({ subject: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select 
-                value={filters.timeframe} 
-                onValueChange={(value: any) => applyFilters({ timeframe: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Week</SelectItem>
-                  <SelectItem value="monthly">Month</SelectItem>
-                  <SelectItem value="all-time">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select 
-                value={filters.scope} 
-                onValueChange={(value: any) => applyFilters({ scope: value })}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">Global</SelectItem>
-                  <SelectItem value="school">School</SelectItem>
-                  <SelectItem value="class">Class</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Filter Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(true)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -544,6 +502,87 @@ export default function Leaderboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Filters Dialog */}
+      <Dialog open={showFilters} onOpenChange={setShowFilters}>
+        <DialogContent className="premium-card max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filter Rankings
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Subject</label>
+              <Select 
+                value={filters.subject} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, subject: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map(subject => (
+                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Timeframe</label>
+              <Select 
+                value={filters.timeframe} 
+                onValueChange={(value: any) => setFilters(prev => ({ ...prev, timeframe: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">This Week</SelectItem>
+                  <SelectItem value="monthly">This Month</SelectItem>
+                  <SelectItem value="all-time">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Scope</label>
+              <Select 
+                value={filters.scope} 
+                onValueChange={(value: any) => setFilters(prev => ({ ...prev, scope: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global</SelectItem>
+                  <SelectItem value="school">My School</SelectItem>
+                  <SelectItem value="class">My Class</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowFilters(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => applyFilters(filters)}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? 'Applying...' : 'Apply Filters'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Enhanced Profile Dialog */}
       <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
