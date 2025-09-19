@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { generateQuiz, generateChat, generateReasoning } from './services/gemini';
@@ -46,6 +47,21 @@ router.put('/api/user', async (req, res) => {
   }
 });
 
+router.put('/api/user/profile', async (req, res) => {
+  try {
+    // Global profile update endpoint
+    const user = await storage.updateUser('demo-user', req.body);
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ error: 'Failed to update user profile' });
+  }
+});
+
 // Progress routes
 router.get('/api/progress', async (req, res) => {
   try {
@@ -87,6 +103,61 @@ router.get('/api/badges', async (req, res) => {
   }
 });
 
+// Enhanced fallback quiz generation
+const generateFallbackQuiz = (params: any) => {
+  const questions = [
+    {
+      id: "fallback_1",
+      question: "What is the basic unit of matter?",
+      options: ["Atom", "Molecule", "Cell", "Proton"],
+      correctAnswer: "Atom",
+      explanation: "An atom is the smallest unit of ordinary matter that forms a chemical element.",
+      difficulty: params.difficulty || 'medium',
+      topic: params.topic || 'General Science'
+    },
+    {
+      id: "fallback_2", 
+      question: "Which planet is known as the Red Planet?",
+      options: ["Venus", "Mars", "Jupiter", "Mercury"],
+      correctAnswer: "Mars",
+      explanation: "Mars appears red due to iron oxide (rust) on its surface.",
+      difficulty: params.difficulty || 'medium',
+      topic: params.topic || 'Astronomy'
+    },
+    {
+      id: "fallback_3",
+      question: "What is the capital of France?",
+      options: ["London", "Berlin", "Paris", "Madrid"],
+      correctAnswer: "Paris",
+      explanation: "Paris is the capital and most populous city of France.",
+      difficulty: params.difficulty || 'easy',
+      topic: params.topic || 'Geography'
+    },
+    {
+      id: "fallback_4",
+      question: "What is 15 × 8?",
+      options: ["120", "125", "115", "130"],
+      correctAnswer: "120",
+      explanation: "15 × 8 = 120",
+      difficulty: params.difficulty || 'easy',
+      topic: params.topic || 'Mathematics'
+    },
+    {
+      id: "fallback_5",
+      question: "Who wrote 'Romeo and Juliet'?",
+      options: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
+      correctAnswer: "William Shakespeare",
+      explanation: "Romeo and Juliet is a tragedy written by William Shakespeare.",
+      difficulty: params.difficulty || 'medium',
+      topic: params.topic || 'Literature'
+    }
+  ];
+
+  // Return random questions based on count
+  const shuffled = questions.sort(() => 0.5 - Math.random());
+  return { questions: shuffled.slice(0, Math.min(params.count || 5, questions.length)) };
+};
+
 // Quiz routes
 router.post('/api/quiz/generate', async (req, res) => {
   try {
@@ -94,16 +165,22 @@ router.post('/api/quiz/generate', async (req, res) => {
 
     console.log('Generating quiz:', { className, subject, topic, difficulty, count });
 
-    const quiz = await generateQuiz({
-      class: className,
-      subject,
-      topic: topic || undefined,
-      difficulty,
-      count
-    });
+    let quiz;
+    try {
+      quiz = await generateQuiz({
+        class: className,
+        subject,
+        topic: topic || undefined,
+        difficulty,
+        count
+      });
 
-    if (!quiz || !quiz.questions) {
-      throw new Error('Invalid quiz generated');
+      if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+        throw new Error('Empty quiz generated');
+      }
+    } catch (aiError) {
+      console.error('AI quiz generation failed, using fallback:', aiError);
+      quiz = generateFallbackQuiz({ class: className, subject, topic, difficulty, count });
     }
 
     // Store quiz in database
@@ -124,21 +201,8 @@ router.post('/api/quiz/generate', async (req, res) => {
   } catch (error) {
     console.error('Quiz generation error:', error);
 
-    // Fallback quiz to prevent app crashes
-    const fallbackQuiz = {
-      questions: [
-        {
-          id: "q1",
-          question: "What is 2 + 2?",
-          options: ["3", "4", "5", "6"],
-          correctAnswer: "4",
-          explanation: "Basic addition: 2 + 2 = 4",
-          difficulty: difficulty || 'easy',
-          topic: topic || 'arithmetic'
-        }
-      ]
-    };
-
+    // Ultimate fallback
+    const fallbackQuiz = generateFallbackQuiz(req.body);
     res.json(fallbackQuiz);
   }
 });
@@ -212,7 +276,13 @@ router.post('/api/chat/stream', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const response = await generateChat(message);
+    let response;
+    try {
+      response = await generateChat(message);
+    } catch (aiError) {
+      console.error('AI chat generation failed, using fallback:', aiError);
+      response = `I understand you're asking about "${message}". While I'm having some technical difficulties right now, I'd be happy to help you learn more about this topic. Could you provide more specific details about what you'd like to know?`;
+    }
     
     // Store assistant response
     await storage.addChatMessage({
@@ -249,6 +319,43 @@ router.delete('/api/chat/history', async (req, res) => {
   }
 });
 
+// Enhanced fallback reasoning generation
+const generateFallbackReasoning = (params: any) => {
+  const challenges = [
+    {
+      question: "If all roses are flowers and some flowers are red, which statement must be true?",
+      answer: "Some roses might be red",
+      explanation: "This is a logical reasoning problem. While we know all roses are flowers, and some flowers are red, we cannot conclude that all roses are red or that no roses are red. The only logical conclusion is that some roses might be red.",
+      difficulty: params.difficulty || 'medium',
+      category: params.category || 'logic',
+      points: params.difficulty === 'easy' ? 10 : params.difficulty === 'hard' ? 30 : 20
+    },
+    {
+      question: "What comes next in this sequence: 2, 6, 12, 20, 30, ?",
+      answer: "42",
+      explanation: "This sequence follows the pattern n(n+1): 1×2=2, 2×3=6, 3×4=12, 4×5=20, 5×6=30, 6×7=42.",
+      difficulty: params.difficulty || 'medium',  
+      category: 'number',
+      points: params.difficulty === 'easy' ? 10 : params.difficulty === 'hard' ? 30 : 20
+    },
+    {
+      question: "A man lives on the 20th floor. Every morning he takes the elevator down to the ground floor. When he comes home, he takes the elevator to the 10th floor and walks the rest, except when it's raining. Why?",
+      answer: "He is too short to reach the button for the 20th floor, except when he has an umbrella",
+      explanation: "This is a classic lateral thinking puzzle. The man is too short to reach the button for the 20th floor, but can reach the 10th floor button. When it's raining, he has an umbrella which he can use to press the higher button.",
+      difficulty: 'hard',
+      category: 'analytical',
+      points: 30
+    }
+  ];
+
+  const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+  return {
+    ...randomChallenge,
+    id: `reasoning_${Date.now()}`,
+    createdAt: new Date().toISOString()
+  };
+};
+
 // Reasoning routes
 router.get('/api/reasoning/history', async (req, res) => {
   try {
@@ -264,13 +371,23 @@ router.post('/api/reasoning/generate', async (req, res) => {
   try {
     const { difficulty, category } = req.body;
 
-    const challenge = await generateReasoning({ difficulty, category });
+    let challenge;
+    try {
+      challenge = await generateReasoning({ difficulty, category });
+      
+      if (!challenge || !challenge.question) {
+        throw new Error('Invalid challenge generated');
+      }
+    } catch (aiError) {
+      console.error('AI reasoning generation failed, using fallback:', aiError);
+      challenge = generateFallbackReasoning({ difficulty, category });
+    }
     
     // Store challenge in database
     const createdChallenge = await storage.createReasoningChallenge({
       userId: 'demo-user',
-      difficulty,
-      category,
+      difficulty: challenge.difficulty,
+      category: challenge.category,
       question: challenge.question,
       answer: challenge.answer,
       explanation: challenge.explanation,
@@ -280,22 +397,15 @@ router.post('/api/reasoning/generate', async (req, res) => {
     res.json({
       id: createdChallenge.id,
       question: challenge.question,
-      difficulty,
-      category,
+      difficulty: challenge.difficulty,
+      category: challenge.category,
       points: challenge.points
     });
   } catch (error) {
     console.error('Reasoning generation error:', error);
 
-    // Fallback reasoning challenge to prevent app crashes
-    const fallbackChallenge = {
-      id: Date.now().toString(),
-      question: "If all roses are flowers and some flowers are red, which of the following must be true?",
-      difficulty: difficulty || 'medium',
-      category: category || 'logic',
-      points: difficulty === 'easy' ? 10 : difficulty === 'hard' ? 30 : 20
-    };
-
+    // Ultimate fallback
+    const fallbackChallenge = generateFallbackReasoning(req.body);
     res.json(fallbackChallenge);
   }
 });

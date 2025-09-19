@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "./use-local-storage";
 import { z } from "zod";
@@ -6,12 +7,14 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  phone: string;
   class: string;
   school: string;
   profilePicture?: string;
   totalPoints: number;
   currentStreak: number;
   joinDate: string;
+  isAuthenticated: boolean;
 }
 
 export interface ChatMessage {
@@ -39,6 +42,8 @@ export interface QuizHistory {
   totalQuestions: number;
   completedAt: string;
   class: string;
+  difficulty: string;
+  timeSpent: number;
 }
 
 export interface ReasoningProgress {
@@ -48,17 +53,28 @@ export interface ReasoningProgress {
   accuracyRate: number;
 }
 
+export interface ReasoningQuizProgress {
+  quizId: string;
+  currentQuestionIndex: number;
+  answers: string[];
+  selectedDifficulty: string;
+  selectedCategory: string;
+  startedAt: string;
+}
+
 // Validation schemas
 const UserProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string().email(),
+  phone: z.string(),
   class: z.string(),
   school: z.string(),
   profilePicture: z.string().optional(),
   totalPoints: z.number().min(0),
   currentStreak: z.number().min(0),
   joinDate: z.string(),
+  isAuthenticated: z.boolean(),
 });
 
 const ChatMessageSchema = z.object({
@@ -76,6 +92,8 @@ const QuizHistorySchema = z.object({
   totalQuestions: z.number().min(1),
   completedAt: z.string(),
   class: z.string(),
+  difficulty: z.string(),
+  timeSpent: z.number(),
 });
 
 const ReasoningProgressSchema = z.object({
@@ -85,7 +103,7 @@ const ReasoningProgressSchema = z.object({
   accuracyRate: z.number().min(0).max(100),
 });
 
-// Utility functions
+// Utility functions with better error handling
 function safeParseFromStorage<T>(key: string, schema: z.ZodSchema<T>, defaultValue: T): T {
   try {
     const stored = localStorage.getItem(key);
@@ -96,6 +114,7 @@ function safeParseFromStorage<T>(key: string, schema: z.ZodSchema<T>, defaultVal
     return validated;
   } catch (error) {
     console.warn(`Invalid data in localStorage for key "${key}", using default:`, error);
+    localStorage.removeItem(key); // Clean up invalid data
     return defaultValue;
   }
 }
@@ -105,6 +124,13 @@ function safeSaveToStorage<T>(key: string, value: T): void {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
     console.error(`Failed to save to localStorage for key "${key}":`, error);
+    // Try to free up space by removing old data
+    try {
+      localStorage.clear();
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (retryError) {
+      console.error(`Failed to save even after clearing localStorage:`, retryError);
+    }
   }
 }
 
@@ -116,40 +142,51 @@ const STORAGE_KEYS = {
   QUIZ_PROGRESS: 'eduapp-quiz-progress',
   REASONING_PROGRESS: 'eduapp-reasoning-progress',
   REASONING_HISTORY: 'eduapp-reasoning-history',
+  REASONING_QUIZ_PROGRESS: 'eduapp-reasoning-quiz-progress',
   EARNED_BADGES: 'eduapp-earned-badges',
+  APP_STATE: 'eduapp-state',
 } as const;
 
 export function resetAppData() {
   Object.values(STORAGE_KEYS).forEach(key => {
     localStorage.removeItem(key);
   });
+  // Dispatch reset event
+  window.dispatchEvent(new CustomEvent('appDataReset'));
 }
 
-// Storage hooks
+// Storage hooks with better persistence
 export function useUserProfile() {
   const defaultProfile: UserProfile = {
-    id: "demo-user",
-    name: "Alex Kumar",
-    email: "alex@school.edu",
-    class: "Class 10",
-    school: "Excellence High School",
+    id: "",
+    name: "",
+    email: "",
+    phone: "",
+    class: "",
+    school: "",
     profilePicture: "",
-    totalPoints: 1240,
-    currentStreak: 7,
-    joinDate: new Date("2024-03-01").toISOString(),
+    totalPoints: 0,
+    currentStreak: 0,
+    joinDate: new Date().toISOString(),
+    isAuthenticated: false,
   };
 
   const [profile, setProfile] = useState<UserProfile>(() => 
     safeParseFromStorage(STORAGE_KEYS.USER_PROFILE, UserProfileSchema, defaultProfile)
   );
 
+  // Auto-save with debouncing
   useEffect(() => {
-    safeSaveToStorage(STORAGE_KEYS.USER_PROFILE, profile);
+    const timeoutId = setTimeout(() => {
+      safeSaveToStorage(STORAGE_KEYS.USER_PROFILE, profile);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [profile]);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  const updateProfile = (updates: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => {
     setProfile(prev => {
-      const newProfile = { ...prev, ...updates };
+      const newProfile = typeof updates === 'function' ? updates(prev) : { ...prev, ...updates };
       
       // Trigger a custom event to notify other components
       window.dispatchEvent(new CustomEvent('profileUpdated', { 
@@ -169,18 +206,14 @@ export function useChatHistory() {
   );
 
   useEffect(() => {
-    // Limit chat history to prevent localStorage overflow
     const limitedMessages = messages.slice(-100); // Keep last 100 messages
-    if (limitedMessages.length !== messages.length) {
-      setMessages(limitedMessages);
-    }
     safeSaveToStorage(STORAGE_KEYS.CHAT_HISTORY, limitedMessages);
   }, [messages]);
 
   const addMessage = (message: Omit<ChatMessage, "id" | "timestamp">) => {
     const newMessage: ChatMessage = {
       ...message,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       timestamp: new Date().toISOString(),
     };
     setMessages(prev => [...prev, newMessage]);
@@ -227,11 +260,41 @@ export function useQuizProgress() {
   return { progress, saveProgress, clearProgress };
 }
 
+export function useReasoningQuizProgress() {
+  const [progress, setProgress] = useState<ReasoningQuizProgress | null>(() => 
+    safeParseFromStorage(STORAGE_KEYS.REASONING_QUIZ_PROGRESS, z.nullable(z.object({
+      quizId: z.string(),
+      currentQuestionIndex: z.number(),
+      answers: z.array(z.string()),
+      selectedDifficulty: z.string(),
+      selectedCategory: z.string(),
+      startedAt: z.string(),
+    })), null)
+  );
+
+  useEffect(() => {
+    if (progress) {
+      safeSaveToStorage(STORAGE_KEYS.REASONING_QUIZ_PROGRESS, progress);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.REASONING_QUIZ_PROGRESS);
+    }
+  }, [progress]);
+
+  const saveProgress = (progressData: ReasoningQuizProgress) => {
+    setProgress(progressData);
+  };
+
+  const clearProgress = () => {
+    setProgress(null);
+  };
+
+  return { progress, saveProgress, clearProgress };
+}
+
 export function useQuizHistory() {
-  // Define the QuizResult type based on the schema for clarity
   type QuizResult = z.infer<typeof QuizHistorySchema>;
 
-  const defaultQuizHistory: QuizResult[] = []; // Default to empty array
+  const defaultQuizHistory: QuizResult[] = [];
 
   const [history, setHistory] = useState<QuizResult[]>(() => 
     safeParseFromStorage(STORAGE_KEYS.QUIZ_HISTORY, z.array(QuizHistorySchema), defaultQuizHistory)
@@ -242,12 +305,12 @@ export function useQuizHistory() {
   }, [history]);
 
   const addQuizResult = (result: Omit<QuizHistory, "id" | "completedAt">) => {
-    const newResult: QuizResult = { // Use QuizResult type here
+    const newResult: QuizResult = {
       ...result,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       completedAt: new Date().toISOString(),
     };
-    setHistory([newResult, ...history].slice(0, 50)); // Keep only last 50 quizzes
+    setHistory(prev => [newResult, ...prev].slice(0, 50)); // Keep only last 50 quizzes
     return newResult;
   };
 
@@ -305,13 +368,11 @@ export function useReasoningProgress() {
       yesterday.setDate(yesterday.getDate() - 1);
 
       if (lastDate === yesterday.toDateString()) {
-        // Consecutive day, increment streak
         updateProgress({
           currentStreak: progress.currentStreak + 1,
           lastPracticeDate: today,
         });
       } else {
-        // Streak broken, reset to 1
         updateProgress({
           currentStreak: 1,
           lastPracticeDate: today,
@@ -323,6 +384,54 @@ export function useReasoningProgress() {
   return { progress, updateProgress, incrementStreak };
 }
 
-// Badge functionality moved to use-badges.ts
+// Email validation utility
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
-// Auto-achievement functionality moved to use-badges.ts
+// Phone validation utility
+export function isValidPhone(phone: string): boolean {
+  // Remove all non-digits
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Check if it's a valid length (10-15 digits is common for most countries)
+  if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+    return false;
+  }
+  
+  // Basic pattern matching for common formats
+  const phonePattern = /^[\+]?[1-9][\d]{0,3}[\s\-]?[\(]?[\d]{3}[\)]?[\s\-]?\d{3}[\s\-]?\d{4}$/;
+  return phonePattern.test(phone) || /^\d{10}$/.test(cleanPhone);
+}
+
+// Fake detection utilities
+export function detectFakeEmail(email: string): boolean {
+  const suspiciousPatterns = [
+    /test@test\.com/i,
+    /fake@fake\.com/i,
+    /example@example\.com/i,
+    /temp@temp\.com/i,
+    /dummy@dummy\.com/i,
+    /sample@sample\.com/i,
+    /123@123\.com/i,
+    /abc@abc\.com/i,
+  ];
+  
+  return suspiciousPatterns.some(pattern => pattern.test(email));
+}
+
+export function detectFakePhone(phone: string): boolean {
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Check for obvious fake patterns
+  const fakePatterns = [
+    /^1{10,}$/, // All 1s
+    /^0{10,}$/, // All 0s
+    /^123456789[0-9]?$/, // Sequential numbers
+    /^987654321[0-9]?$/, // Reverse sequential
+    /^(\d)\1{9,}$/, // Repeated digits
+  ];
+  
+  return fakePatterns.some(pattern => pattern.test(cleanPhone));
+}

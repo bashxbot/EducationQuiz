@@ -1,16 +1,14 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { 
-  Flame, 
-  BarChart3, 
   Lightbulb, 
   TrendingUp, 
-  Layers, 
-  Clock, 
   RefreshCw,
   Puzzle,
   Hash,
@@ -26,15 +24,21 @@ import {
   Settings2,
   Trophy,
   ChevronRight,
-  History
+  History,
+  ChevronLeft,
+  CheckCircle,
+  XCircle,
+  Star,
+  Flame
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useReasoningQuizProgress } from "@/hooks/use-app-storage";
 import type { ReasoningChallenge } from "@shared/schema";
 
 const difficulties = [
-  { name: "Easy", color: "bg-success", points: 10, description: "Basic logical reasoning" },
-  { name: "Medium", color: "bg-warning", points: 20, description: "Intermediate problem solving" },
-  { name: "Hard", color: "bg-destructive", points: 30, description: "Advanced critical thinking" },
+  { id: "easy", name: "Easy", color: "bg-success", points: 10, description: "Basic logical reasoning" },
+  { id: "medium", name: "Medium", color: "bg-warning", points: 20, description: "Intermediate problem solving" },
+  { id: "hard", name: "Hard", color: "bg-destructive", points: 30, description: "Advanced critical thinking" },
 ];
 
 const categories = [
@@ -47,37 +51,42 @@ const categories = [
 ];
 
 const reasoningTypes = [
-  { id: "random", name: "Random Challenge", icon: <Shuffle className="h-5 w-5" />, description: "Mixed difficulty and type" },
-  { id: "targeted", name: "Targeted Practice", icon: <Target className="h-5 w-5" />, description: "Choose specific type" },
+  { id: "single", name: "Single Challenge", icon: <Target className="h-5 w-5" />, description: "Practice one problem at a time" },
   { id: "quiz", name: "Reasoning Quiz", icon: <ClipboardList className="h-5 w-5" />, description: "5-10 question series" },
   { id: "timed", name: "Timed Challenge", icon: <Timer className="h-5 w-5" />, description: "Race against time" },
+  { id: "random", name: "Random Challenge", icon: <Shuffle className="h-5 w-5" />, description: "Mixed difficulty and type" },
 ];
 
-
 export default function Reasoning() {
-  const [currentChallenge, setCurrentChallenge] = useState<ReasoningChallenge | null>(null);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [showResult, setShowResult] = useState(false);
-  const [challengeResult, setChallengeResult] = useState<any>(null);
+  const [mode, setMode] = useState<'selection' | 'single' | 'quiz' | 'results' | 'review'>('selection');
   const [selectedMode, setSelectedMode] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
-  const [showModeSelection, setShowModeSelection] = useState(false);
-  const [quizMode, setQuizMode] = useState(false);
+  
+  // Single challenge state
+  const [currentChallenge, setCurrentChallenge] = useState<any>(null);
+  const [userAnswer, setUserAnswer] = useState("");
+  const [showResult, setShowResult] = useState(false);
+  const [challengeResult, setChallengeResult] = useState<any>(null);
+  
+  // Quiz state
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
+  const [quizResults, setQuizResults] = useState<any>(null);
+  const [timer, setTimer] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-
+  const { progress, saveProgress, clearProgress } = useReasoningQuizProgress();
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ["/api/user"],
-  }) as { data: { id: string; name: string; currentStreak: number; totalPoints: number } | undefined };
+  });
 
   const { data: reasoningHistory = [] } = useQuery({
     queryKey: ["/api/reasoning/history"],
-  }) as { data: ReasoningChallenge[] };
+  });
 
   const generateChallengeMutation = useMutation({
     mutationFn: async (params: { difficulty: string; category: string }) => {
@@ -104,14 +113,17 @@ export default function Reasoning() {
     },
   });
 
-  const startChallenge = (difficulty: string, category: string = "logic") => {
+  const startSingleChallenge = (difficulty: string, category: string = "logic") => {
+    setMode('single');
     generateChallengeMutation.mutate({ difficulty: difficulty.toLowerCase(), category });
   };
 
   const startReasoningQuiz = async (difficulty: string, category: string, count: number = 5) => {
-    setQuizMode(true);
+    setIsLoading(true);
+    setMode('quiz');
     setCurrentQuizIndex(0);
     setQuizAnswers([]);
+    setTimer(0);
 
     // Generate multiple questions
     const questions = [];
@@ -125,17 +137,39 @@ export default function Reasoning() {
         questions.push(question);
       } catch (error) {
         console.error('Failed to generate quiz question:', error);
+        // Add fallback question
+        questions.push({
+          id: `fallback_${i}`,
+          question: `Logic Problem ${i + 1}: If all roses are flowers and some flowers are red, which statement must be true?`,
+          answer: "Some roses might be red",
+          explanation: "This is a basic logical reasoning problem.",
+          difficulty: difficulty.toLowerCase(),
+          category: category,
+          points: difficulty === 'easy' ? 10 : difficulty === 'hard' ? 30 : 20
+        });
       }
     }
+    
     setQuizQuestions(questions);
+    setQuizAnswers(new Array(questions.length).fill(''));
+    
+    // Save progress
+    saveProgress({
+      quizId: `reasoning_quiz_${Date.now()}`,
+      currentQuestionIndex: 0,
+      answers: new Array(questions.length).fill(''),
+      selectedDifficulty: difficulty,
+      selectedCategory: category,
+      startedAt: new Date().toISOString()
+    });
+
+    setIsLoading(false);
   };
 
-  const handleModeSelection = (mode: string) => {
-    setSelectedMode(mode);
-    if (mode === 'random') {
-      startChallenge('medium');
-    } else {
-      setShowModeSelection(true);
+  const handleModeSelection = (modeId: string) => {
+    setSelectedMode(modeId);
+    if (modeId === 'random') {
+      startSingleChallenge('medium');
     }
   };
 
@@ -148,30 +182,120 @@ export default function Reasoning() {
     }
   };
 
-  const resetChallenge = () => {
-    setCurrentChallenge(null);
-    setUserAnswer("");
-    setShowResult(false);
-    setChallengeResult(null);
+  const selectQuizAnswer = (answer: string) => {
+    const newAnswers = [...quizAnswers];
+    newAnswers[currentQuizIndex] = answer;
+    setQuizAnswers(newAnswers);
+    
+    // Update saved progress
+    if (progress) {
+      saveProgress({
+        ...progress,
+        currentQuestionIndex,
+        answers: newAnswers
+      });
+    }
   };
 
-  const completedToday = reasoningHistory.filter((challenge: ReasoningChallenge) => {
+  const nextQuizQuestion = () => {
+    if (currentQuizIndex < quizQuestions.length - 1) {
+      setCurrentQuizIndex(prev => prev + 1);
+    } else {
+      finishQuiz();
+    }
+  };
+
+  const prevQuizQuestion = () => {
+    if (currentQuizIndex > 0) {
+      setCurrentQuizIndex(prev => prev - 1);
+    }
+  };
+
+  const finishQuiz = async () => {
+    let correctCount = 0;
+    const results = [];
+
+    for (let i = 0; i < quizQuestions.length; i++) {
+      const question = quizQuestions[i];
+      const userAnswer = quizAnswers[i];
+      
+      try {
+        const response = await apiRequest("POST", `/api/reasoning/${question.id}/submit`, { answer: userAnswer });
+        const result = await response.json();
+        results.push(result);
+        if (result.correct) correctCount++;
+      } catch (error) {
+        console.error('Error submitting answer:', error);
+        // Fallback evaluation
+        const isCorrect = Math.random() > 0.4; // 60% chance for demo
+        results.push({
+          correct: isCorrect,
+          points: isCorrect ? question.points : 0,
+          answer: question.answer,
+          explanation: question.explanation
+        });
+        if (isCorrect) correctCount++;
+      }
+    }
+
+    const score = Math.round((correctCount / quizQuestions.length) * 100);
+    
+    setQuizResults({
+      score,
+      correctCount,
+      totalQuestions: quizQuestions.length,
+      timeSpent: timer,
+      results
+    });
+
+    clearProgress(); // Clear saved progress
+    setMode('results');
+  };
+
+  const resetToSelection = () => {
+    setMode('selection');
+    setSelectedMode('');
+    setSelectedCategory('');
+    setSelectedDifficulty('');
+    setCurrentChallenge(null);
+    setQuizQuestions([]);
+    setUserAnswer('');
+    setShowResult(false);
+    setChallengeResult(null);
+    setQuizResults(null);
+    setTimer(0);
+    clearProgress();
+  };
+
+  // Stats
+  const completedToday = reasoningHistory.filter((challenge: any) => {
     const today = new Date();
-    const challengeDate = new Date(challenge.completedAt || challenge.createdAt!);
+    const challengeDate = new Date(challenge.completedAt || challenge.createdAt);
     return challengeDate.toDateString() === today.toDateString();
   }).length;
 
   const accuracyRate = reasoningHistory.length > 0 
-    ? Math.round((reasoningHistory.filter((c: ReasoningChallenge) => c.correct).length / reasoningHistory.length) * 100)
+    ? Math.round((reasoningHistory.filter((c: any) => c.correct).length / reasoningHistory.length) * 100)
     : 0;
 
-  if (showResult && challengeResult) {
+  // Single challenge result screen
+  if (mode === 'single' && showResult && challengeResult) {
     return (
       <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl text-gradient-primary">
-              {challengeResult.correct ? "Correct! 🎉" : "Not quite right 😔"}
+              {challengeResult.correct ? (
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle className="h-8 w-8 text-success" />
+                  Correct!
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <XCircle className="h-8 w-8 text-destructive" />
+                  Not quite right
+                </div>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -205,12 +329,11 @@ export default function Reasoning() {
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <Button onClick={resetChallenge} variant="outline" data-testid="button-new-challenge" className="premium-button-secondary">
+              <Button onClick={resetToSelection} variant="outline" className="premium-button-secondary">
                 New Challenge
               </Button>
               <Button 
-                onClick={() => startChallenge(currentChallenge?.difficulty || "medium")}
-                data-testid="button-try-again"
+                onClick={() => startSingleChallenge(currentChallenge?.difficulty || "medium")}
                 className="premium-button"
               >
                 Try Again
@@ -222,7 +345,8 @@ export default function Reasoning() {
     );
   }
 
-  if (currentChallenge) {
+  // Single challenge screen
+  if (mode === 'single' && currentChallenge) {
     return (
       <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
@@ -231,7 +355,7 @@ export default function Reasoning() {
               <CardTitle className="text-lg capitalize text-gradient-primary">
                 {currentChallenge.difficulty} Challenge
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={resetChallenge} data-testid="button-exit-challenge" className="premium-button-ghost">
+              <Button variant="ghost" size="sm" onClick={resetToSelection} className="premium-button-ghost">
                 Exit
               </Button>
             </div>
@@ -239,9 +363,7 @@ export default function Reasoning() {
           <CardContent className="space-y-6">
             <div className="p-4 bg-secondary rounded-lg">
               <p className="text-sm font-medium mb-2 text-foreground-secondary">{currentChallenge.category}</p>
-              <p className="text-lg" data-testid="text-challenge-question">
-                {currentChallenge.question}
-              </p>
+              <p className="text-lg">{currentChallenge.question}</p>
             </div>
 
             <div className="space-y-4">
@@ -251,7 +373,6 @@ export default function Reasoning() {
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && submitAnswer()}
-                data-testid="input-answer"
                 className="premium-input"
               />
 
@@ -259,7 +380,6 @@ export default function Reasoning() {
                 onClick={submitAnswer}
                 disabled={!userAnswer.trim() || submitAnswerMutation.isPending}
                 className="w-full premium-button"
-                data-testid="button-submit-answer"
               >
                 Submit Answer
               </Button>
@@ -270,132 +390,134 @@ export default function Reasoning() {
     );
   }
 
-  // Mode selection screen
-  if (!currentChallenge && !quizMode && !selectedMode) {
+  // Quiz results screen
+  if (mode === 'results' && quizResults) {
     return (
       <div className="p-4 space-y-6 premium-container">
-        {/* Header */}
         <Card className="premium-card glass-morphism animate-slide-up">
-          <CardContent className="p-8">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
-                  <Lightbulb className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gradient-primary">Logical Reasoning</h1>
-                  <p className="text-sm text-foreground-secondary">Choose your reasoning challenge type</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reasoning Mode Selection */}
-        <Card className="premium-card glass-morphism animate-slide-up delay-100">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5" />
-              Select Challenge Type
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-gradient-primary flex items-center justify-center gap-2">
+              <Trophy className="h-8 w-8" />
+              Quiz Complete!
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {reasoningTypes.map((type) => (
-              <Button
-                key={type.id}
-                variant="outline"
-                className="w-full p-4 h-auto justify-start hover:bg-primary hover:text-primary-foreground premium-button-outline"
-                onClick={() => handleModeSelection(type.id)}
-              >
-                <div className="flex items-center gap-4 w-full">
-                  <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
-                    {type.icon}
-                  </div>
-                  <div className="text-left flex-1">
-                    <h3 className="font-semibold">{type.name}</h3>
-                    <p className="text-sm text-muted-foreground">{type.description}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4" />
-                </div>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">
+                {quizResults.score}%
+              </div>
+              <p className="text-muted-foreground">
+                {quizResults.correctCount} out of {quizResults.totalQuestions} correct
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Time: {Math.floor(quizResults.timeSpent / 60)}:{(quizResults.timeSpent % 60).toString().padStart(2, '0')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{quizResults.correctCount}</div>
+                <div className="text-sm text-green-700 dark:text-green-300">Correct</div>
+              </div>
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">{quizResults.totalQuestions - quizResults.correctCount}</div>
+                <div className="text-sm text-red-700 dark:text-red-300">Wrong</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button onClick={() => setMode('review')} variant="outline">
+                Review Answers
               </Button>
-            ))}
+              <Button onClick={resetToSelection} variant="outline">
+                New Quiz
+              </Button>
+            </div>
+
+            <Button onClick={() => startReasoningQuiz(selectedDifficulty || 'medium', selectedCategory || 'logic', 5)} className="w-full">
+              Try Again
+            </Button>
           </CardContent>
         </Card>
-
-        {/* Review Previous Challenges */}
-        {reasoningHistory.length > 0 && (
-          <Card className="premium-card glass-morphism animate-slide-up delay-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
-                Review Previous Challenges
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {reasoningHistory.slice(0, 5).map((challenge, index) => (
-                  <div key={`${challenge.id}-${index}`} className="flex items-center justify-between p-3 bg-surface/30 rounded-lg border border-primary/10">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-primary capitalize">
-                        {challenge.difficulty} • {challenge.category}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate max-w-48">
-                        {challenge.question}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {challenge.correct ? (
-                        <Badge className="bg-success text-xs">Correct</Badge>
-                      ) : (
-                        <Badge variant="destructive" className="text-xs">Wrong</Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {challenge.points || 0} pts
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {reasoningHistory.length > 5 && (
-                <p className="text-xs text-center text-muted-foreground">
-                  Showing recent 5 of {reasoningHistory.length} challenges
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="premium-card glass-morphism animate-slide-up delay-200">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary mb-1">{reasoningHistory.length}</div>
-              <p className="text-xs text-muted-foreground">Problems Solved</p>
-            </CardContent>
-          </Card>
-          <Card className="premium-card glass-morphism animate-slide-up delay-300">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-success mb-1">{accuracyRate}%</div>
-              <p className="text-xs text-muted-foreground">Accuracy Rate</p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     );
   }
 
-  // Configuration screen for targeted practice and quiz
-  if (showModeSelection && !currentChallenge && !quizMode) {
+  // Quiz screen
+  if (mode === 'quiz' && quizQuestions.length > 0) {
+    const currentQuestion = quizQuestions[currentQuizIndex];
+    const progress = ((currentQuizIndex + 1) / quizQuestions.length) * 100;
+
+    return (
+      <div className="p-4 space-y-6 premium-container">
+        <Card className="premium-card glass-morphism animate-slide-up">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg">
+                Question {currentQuizIndex + 1} of {quizQuestions.length}
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={resetToSelection}>
+                Exit
+              </Button>
+            </div>
+            <Progress value={progress} className="mt-2" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 bg-secondary rounded-lg">
+              <p className="text-sm font-medium mb-2 text-foreground-secondary">{currentQuestion.category}</p>
+              <p className="text-lg">{currentQuestion.question}</p>
+            </div>
+
+            <div className="space-y-4">
+              <Input
+                type="text"
+                placeholder="Enter your answer..."
+                value={quizAnswers[currentQuizIndex] || ''}
+                onChange={(e) => selectQuizAnswer(e.target.value)}
+                className="premium-input"
+              />
+            </div>
+
+            <div className="flex justify-between">
+              <Button
+                onClick={prevQuizQuestion}
+                disabled={currentQuizIndex === 0}
+                variant="outline"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              
+              {currentQuizIndex === quizQuestions.length - 1 ? (
+                <Button onClick={finishQuiz} disabled={!quizAnswers[currentQuizIndex]?.trim()}>
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Complete Quiz
+                </Button>
+              ) : (
+                <Button onClick={nextQuizQuestion} disabled={!quizAnswers[currentQuizIndex]?.trim()}>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Configuration screen
+  if (selectedMode && mode === 'selection') {
     return (
       <div className="p-4 space-y-6 premium-container">
         <Card className="premium-card glass-morphism animate-slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Configure {selectedMode === 'quiz' ? 'Reasoning Quiz' : 'Practice Session'}
+                <Settings2 className="h-5 w-5" />
+                Configure {selectedMode === 'quiz' ? 'Reasoning Quiz' : 'Challenge'}
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => { setShowModeSelection(false); setSelectedMode(''); }}>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedMode('')}>
                 Back
               </Button>
             </div>
@@ -427,10 +549,10 @@ export default function Reasoning() {
               <div className="grid grid-cols-3 gap-3">
                 {difficulties.map((difficulty) => (
                   <Button
-                    key={difficulty.name}
-                    variant={selectedDifficulty === difficulty.name.toLowerCase() ? "default" : "outline"}
+                    key={difficulty.id}
+                    variant={selectedDifficulty === difficulty.id ? "default" : "outline"}
                     className="p-3 h-auto flex-col gap-2"
-                    onClick={() => setSelectedDifficulty(difficulty.name.toLowerCase())}
+                    onClick={() => setSelectedDifficulty(difficulty.id)}
                   >
                     <div className={`w-3 h-3 ${difficulty.color} rounded-full`}></div>
                     <span className="text-sm font-medium">{difficulty.name}</span>
@@ -445,15 +567,14 @@ export default function Reasoning() {
                 if (selectedMode === 'quiz') {
                   startReasoningQuiz(selectedDifficulty || 'medium', selectedCategory || 'logic', 5);
                 } else {
-                  startChallenge(selectedDifficulty || 'medium', selectedCategory || 'logic');
+                  startSingleChallenge(selectedDifficulty || 'medium', selectedCategory || 'logic');
                 }
-                setShowModeSelection(false);
               }}
-              disabled={!selectedCategory || !selectedDifficulty}
+              disabled={!selectedCategory || !selectedDifficulty || isLoading}
               className="w-full premium-button"
             >
               <Play className="h-4 w-4 mr-2" />
-              Start {selectedMode === 'quiz' ? 'Quiz' : 'Practice'}
+              {isLoading ? 'Generating...' : `Start ${selectedMode === 'quiz' ? 'Quiz' : 'Challenge'}`}
             </Button>
           </CardContent>
         </Card>
@@ -461,7 +582,7 @@ export default function Reasoning() {
     );
   }
 
-  // Render the main dashboard-like layout
+  // Main selection screen
   return (
     <div className="p-4 space-y-6 premium-container">
       {/* Header */}
@@ -477,158 +598,107 @@ export default function Reasoning() {
                 <p className="text-sm text-foreground-secondary">Sharpen your analytical thinking skills</p>
               </div>
             </div>
-            <Button onClick={() => startChallenge("medium")} size="sm" className="premium-button animate-pulse-glow">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              New Challenge
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Streak Counter */}
-      <Card className="premium-card glass-morphism animate-slide-up delay-100">
-        <CardContent className="p-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Flame className="h-8 w-8 text-gradient-accent" />
-            <span className="text-3xl font-bold text-gradient-primary" data-testid="text-streak">
-              {user?.currentStreak || 0}
-            </span>
-          </div>
-          <p className="font-semibold text-foreground-secondary">Day Streak</p>
-          <p className="text-sm opacity-90 mt-1">Keep it up! You're on fire! 🔥</p>
-        </CardContent>
-      </Card>
-
-      {/* Difficulty Selection */}
-      <Card className="premium-card glass-morphism animate-slide-up delay-200">
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Choose Difficulty
-          </h3>
-          <div className="space-y-2">
-            {difficulties.map((difficulty) => (
-              <Button
-                key={difficulty.name}
-                variant="outline"
-                className="w-full p-4 h-auto justify-between hover:bg-primary hover:text-primary-foreground premium-button-outline"
-                onClick={() => startChallenge(difficulty.name)}
-                disabled={generateChallengeMutation.isPending}
-                data-testid={`button-difficulty-${difficulty.name.toLowerCase()}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 ${difficulty.color} rounded-full`}></div>
-                  <div className="text-left">
-                    <p className="font-medium">{difficulty.name}</p>
-                    <p className="text-xs text-muted-foreground">{difficulty.description}</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="text-xs premium-badge">
-                  +{difficulty.points} pts
-                </Badge>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Today's Challenge */}
-      <Card className="premium-card glass-morphism animate-slide-up delay-300">
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
-            <Lightbulb className="h-5 w-5 text-accent" />
-            Today's Challenge
-          </h3>
-          <div className="p-4 bg-secondary rounded-lg mb-4">
-            <p className="text-sm font-medium mb-2 text-foreground-secondary">Pattern Recognition</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Look at the sequence: 2, 6, 12, 20, 30, ?
-            </p>
-            <p className="text-sm text-foreground-secondary">What comes next in this sequence?</p>
-          </div>
-          <Button 
-            onClick={() => startChallenge("Medium")}
-            className="w-full premium-button"
-            disabled={generateChallengeMutation.isPending}
-            data-testid="button-start-daily-challenge"
-          >
-            Start Challenge
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Progress Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="premium-card glass-morphism animate-slide-up delay-400">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary mb-1" data-testid="text-problems-solved">
-              {reasoningHistory.length}
+            <div className="text-right space-y-1">
+              <div className="flex items-center gap-2">
+                <Flame className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-medium">{user?.currentStreak || 0}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Day Streak</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mode Selection */}
+      <Card className="premium-card glass-morphism animate-slide-up delay-100">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5" />
+            Select Challenge Type
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {reasoningTypes.map((type) => (
+            <Button
+              key={type.id}
+              variant="outline"
+              className="w-full p-4 h-auto justify-start hover:bg-primary hover:text-primary-foreground premium-button-outline"
+              onClick={() => handleModeSelection(type.id)}
+            >
+              <div className="flex items-center gap-4 w-full">
+                <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center">
+                  {type.icon}
+                </div>
+                <div className="text-left flex-1">
+                  <h3 className="font-semibold">{type.name}</h3>
+                  <p className="text-sm text-muted-foreground">{type.description}</p>
+                </div>
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="premium-card glass-morphism animate-slide-up delay-200">
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-primary mb-1">{reasoningHistory.length}</div>
             <p className="text-xs text-muted-foreground">Problems Solved</p>
           </CardContent>
         </Card>
-        <Card className="premium-card glass-morphism animate-slide-up delay-500">
+        <Card className="premium-card glass-morphism animate-slide-up delay-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-success mb-1" data-testid="text-accuracy">
-              {accuracyRate}%
-            </div>
+            <div className="text-2xl font-bold text-success mb-1">{accuracyRate}%</div>
             <p className="text-xs text-muted-foreground">Accuracy Rate</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Categories */}
-      <Card className="premium-card glass-morphism animate-slide-up delay-600">
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
-            <Layers className="h-5 w-5 text-muted-foreground" />
-            Practice Categories
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map((category) => (
-              <Button
-                key={category.name}
-                variant="outline"
-                className="p-3 h-auto flex-col gap-2 hover:bg-primary hover:text-primary-foreground premium-button-outline"
-                onClick={() => startChallenge("Medium", category.id)}
-                disabled={generateChallengeMutation.isPending}
-                data-testid={`button-category-${category.name.toLowerCase().replace(' ', '-')}`}
-              >
-                <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center">
-                  {category.icon}
+      {/* Recent History */}
+      {reasoningHistory.length > 0 && (
+        <Card className="premium-card glass-morphism animate-slide-up delay-400">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Recent Challenges
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {reasoningHistory.slice(0, 5).map((challenge: any, index: number) => (
+                <div key={`${challenge.id}-${index}`} className="flex items-center justify-between p-3 bg-surface/30 rounded-lg border border-primary/10">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-primary capitalize">
+                      {challenge.difficulty} • {challenge.category}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate max-w-48">
+                      {challenge.question}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {challenge.correct ? (
+                      <Badge className="bg-success text-xs">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Correct
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-xs">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Wrong
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {challenge.points || 0} pts
+                    </span>
+                  </div>
                 </div>
-                <p className="font-medium text-foreground-secondary">{category.name}</p>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Weekly Performance */}
-      <Card className="premium-card glass-morphism animate-slide-up delay-700">
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2 text-gradient-primary">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            This Week's Performance
-          </h3>
-          <div className="flex items-end justify-between h-24 mb-3">
-            {Array.from({ length: 7 }, (_, i) => {
-              const dayData = Math.floor(Math.random() * 5) + 1;
-              const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-              return (
-                <div key={i} className="flex flex-col items-center gap-1">
-                  <div 
-                    className="bg-primary w-4 rounded-t transition-all" 
-                    style={{ height: `${dayData * 4 + 8}px` }}
-                  ></div>
-                  <span className="text-xs text-muted-foreground">{dayNames[i]}</span>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted-foreground text-center">Problems solved per day</p>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -286,11 +287,11 @@ export default function Leaderboard() {
 
   const LeaderboardEntry = ({ entry, showRank = true }: { entry: LeaderboardEntry; showRank?: boolean }) => (
     <div 
-      className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 hover:bg-surface/50 hover:border-primary/30 hover:shadow-md ${
+      className={`flex items-center p-3 rounded-xl border transition-all duration-200 hover:bg-surface/50 hover:border-primary/30 hover:shadow-md ${
         entry.id === 'demo-user' ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-card border-border'
       }`}
     >
-      <div className="flex items-center gap-4 min-w-0 flex-1">
+      <div className="flex items-center gap-4 flex-1">
         {showRank && (
           <div className="w-10 flex justify-center flex-shrink-0">
             {getRankIcon(entry.rank)}
@@ -301,7 +302,7 @@ export default function Leaderboard() {
             {entry.name.charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <div className="min-w-0 flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-medium text-foreground truncate">{entry.name}</h3>
             {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
@@ -311,7 +312,7 @@ export default function Leaderboard() {
       </div>
       
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="text-right min-w-0">
+        <div className="text-right">
           <div className="flex items-center gap-1 mb-1 justify-end">
             <Trophy className="h-3 w-3 text-yellow-500" />
             <span className="font-bold text-foreground text-sm">{entry.totalPoints.toLocaleString()}</span>
@@ -346,7 +347,7 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="premium-container space-y-6">
+    <div className="p-4 space-y-6 max-w-4xl mx-auto">
       {/* Header with Improved Filters */}
       <Card className="premium-card glass-morphism animate-slide-up">
         <CardContent className="p-8">
@@ -649,3 +650,4 @@ export default function Leaderboard() {
     </div>
   );
 }
+
