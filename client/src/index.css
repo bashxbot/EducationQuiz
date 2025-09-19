@@ -528,6 +528,15 @@ input, select, button, [role="button"], [role="combobox"] {
 
 /* Fix for dropdown menus and dialogs */
 [data-radix-popper-content-wrapper] {
+  z-index: 200 !important;
+}
+
+[data-radix-select-content] {
+  z-index: 200 !important;
+  position: fixed !important;
+}
+
+[data-radix-dialog-overlay] {
   z-index: 50 !important;
 }
 
@@ -538,6 +547,32 @@ input, select, button, [role="button"], [role="combobox"] {
   transform: translate(-50%, -50%) !important;
   max-width: calc(100vw - 2rem) !important;
   max-height: calc(100vh - 2rem) !important;
+  z-index: 100 !important;
+}
+
+/* Prevent layout shifts when dropdowns open */
+[data-radix-select-trigger] {
+  position: relative;
+  z-index: 1;
+}
+
+[data-radix-select-content] {
+  will-change: auto !important;
+}
+
+/* Ensure stable positioning */
+.premium-card {
+  contain: layout;
+}
+
+/* Prevent viewport changes */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
 }
 
 @layer utilities {

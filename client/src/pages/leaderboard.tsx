@@ -505,24 +505,24 @@ export default function Leaderboard() {
 
       {/* Filters Dialog */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="premium-card max-w-md">
+        <DialogContent className="premium-card max-w-md fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5" />
               Filter Rankings
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Subject</label>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium block">Subject</label>
               <Select 
                 value={filters.subject} 
                 onValueChange={(value) => setFilters(prev => ({ ...prev, subject: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
                   {subjects.map(subject => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
@@ -530,16 +530,16 @@ export default function Leaderboard() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Timeframe</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium block">Timeframe</label>
               <Select 
                 value={filters.timeframe} 
                 onValueChange={(value: any) => setFilters(prev => ({ ...prev, timeframe: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
                   <SelectItem value="weekly">This Week</SelectItem>
                   <SelectItem value="monthly">This Month</SelectItem>
                   <SelectItem value="all-time">All Time</SelectItem>
@@ -547,16 +547,16 @@ export default function Leaderboard() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Scope</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium block">Scope</label>
               <Select 
                 value={filters.scope} 
                 onValueChange={(value: any) => setFilters(prev => ({ ...prev, scope: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100] max-h-[200px]" position="popper" sideOffset={4}>
                   <SelectItem value="global">Global</SelectItem>
                   <SelectItem value="school">My School</SelectItem>
                   <SelectItem value="class">My Class</SelectItem>
@@ -564,7 +564,7 @@ export default function Leaderboard() {
               </Select>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 border-t border-border">
               <Button 
                 variant="outline" 
                 onClick={() => setShowFilters(false)}
@@ -575,7 +575,7 @@ export default function Leaderboard() {
               <Button 
                 onClick={() => applyFilters(filters)}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 premium-button"
               >
                 {isLoading ? 'Applying...' : 'Apply Filters'}
               </Button>
