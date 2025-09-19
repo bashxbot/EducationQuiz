@@ -80,8 +80,6 @@ html {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   font-family: var(--font-primary);
@@ -94,9 +92,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
-  zoom: 1;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
 }
@@ -498,6 +494,14 @@ body::before {
     transform: scale(0.98);
   }
 
+  /* Touch Manipulation */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   /* Loading States */
   .loading-skeleton {
     background: linear-gradient(90deg, var(--surface) 25%, var(--surface-secondary) 50%, var(--surface) 75%);
@@ -522,9 +526,18 @@ input, select, button, [role="button"], [role="combobox"] {
   z-index: 10;
 }
 
-/* Fix for dropdown menus */
+/* Fix for dropdown menus and dialogs */
 [data-radix-popper-content-wrapper] {
   z-index: 50 !important;
+}
+
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: calc(100vw - 2rem) !important;
+  max-height: calc(100vh - 2rem) !important;
 }
 
 @layer utilities {
