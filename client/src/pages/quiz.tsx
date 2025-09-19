@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight, Brain } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Clock, Trophy, Target, BookOpen, ChevronLeft, ChevronRight, Brain, GraduationCap, Library, FileText, Play } from 'lucide-react';
 import { useQuizHistory, useUserProfile } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -28,26 +28,95 @@ interface QuizResults {
   timeSpent: number;
 }
 
-const subjects = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology',
-  'Computer Science', 'English', 'History', 'Geography'
+const classes = [
+  { id: '6', name: 'Class 6', icon: '📚' },
+  { id: '7', name: 'Class 7', icon: '📖' },
+  { id: '8', name: 'Class 8', icon: '📝' },
+  { id: '9', name: 'Class 9', icon: '🎓' },
+  { id: '10', name: 'Class 10', icon: '🏆' },
+  { id: '11', name: 'Class 11', icon: '🔬' },
+  { id: '12', name: 'Class 12', icon: '🎯' }
 ];
 
-const topicsBySubject: Record<string, string[]> = {
-  'Mathematics': ['Algebra', 'Geometry', 'Calculus', 'Statistics', 'Trigonometry'],
-  'Physics': ['Mechanics', 'Thermodynamics', 'Electromagnetism', 'Optics', 'Modern Physics'],
-  'Chemistry': ['Organic Chemistry', 'Inorganic Chemistry', 'Physical Chemistry', 'Biochemistry'],
-  'Biology': ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Biology'],
-  'Computer Science': ['Programming', 'Data Structures', 'Algorithms', 'Database', 'Networks'],
-  'English': ['Grammar', 'Literature', 'Vocabulary', 'Writing', 'Reading Comprehension'],
-  'History': ['Ancient History', 'Medieval History', 'Modern History', 'World Wars', 'Indian History'],
-  'Geography': ['Physical Geography', 'Human Geography', 'Economic Geography', 'Political Geography']
+const subjects = [
+  { id: 'mathematics', name: 'Mathematics', icon: '🔢', color: 'from-blue-500 to-cyan-500' },
+  { id: 'physics', name: 'Physics', icon: '⚛️', color: 'from-purple-500 to-pink-500' },
+  { id: 'chemistry', name: 'Chemistry', icon: '🧪', color: 'from-green-500 to-emerald-500' },
+  { id: 'biology', name: 'Biology', icon: '🧬', color: 'from-red-500 to-orange-500' },
+  { id: 'computer-science', name: 'Computer Science', icon: '💻', color: 'from-indigo-500 to-purple-500' },
+  { id: 'english', name: 'English', icon: '📚', color: 'from-yellow-500 to-orange-500' },
+  { id: 'history', name: 'History', icon: '🏛️', color: 'from-amber-600 to-yellow-500' },
+  { id: 'geography', name: 'Geography', icon: '🌍', color: 'from-emerald-500 to-teal-500' }
+];
+
+const chaptersBySubject: Record<string, { id: string; name: string; icon: string }[]> = {
+  'mathematics': [
+    { id: 'algebra', name: 'Algebra', icon: '🔤' },
+    { id: 'geometry', name: 'Geometry', icon: '📐' },
+    { id: 'calculus', name: 'Calculus', icon: '📊' },
+    { id: 'statistics', name: 'Statistics', icon: '📈' },
+    { id: 'trigonometry', name: 'Trigonometry', icon: '📏' }
+  ],
+  'physics': [
+    { id: 'mechanics', name: 'Mechanics', icon: '⚙️' },
+    { id: 'thermodynamics', name: 'Thermodynamics', icon: '🌡️' },
+    { id: 'electromagnetism', name: 'Electromagnetism', icon: '⚡' },
+    { id: 'optics', name: 'Optics', icon: '🔍' },
+    { id: 'modern-physics', name: 'Modern Physics', icon: '🚀' }
+  ],
+  'chemistry': [
+    { id: 'organic', name: 'Organic Chemistry', icon: '🧪' },
+    { id: 'inorganic', name: 'Inorganic Chemistry', icon: '⚗️' },
+    { id: 'physical', name: 'Physical Chemistry', icon: '🔬' },
+    { id: 'biochemistry', name: 'Biochemistry', icon: '🧬' }
+  ],
+  'biology': [
+    { id: 'cell-biology', name: 'Cell Biology', icon: '🔬' },
+    { id: 'genetics', name: 'Genetics', icon: '🧬' },
+    { id: 'evolution', name: 'Evolution', icon: '🦎' },
+    { id: 'ecology', name: 'Ecology', icon: '🌿' },
+    { id: 'human-biology', name: 'Human Biology', icon: '👤' }
+  ],
+  'computer-science': [
+    { id: 'programming', name: 'Programming', icon: '💻' },
+    { id: 'data-structures', name: 'Data Structures', icon: '🗂️' },
+    { id: 'algorithms', name: 'Algorithms', icon: '🔄' },
+    { id: 'database', name: 'Database', icon: '🗄️' },
+    { id: 'networks', name: 'Networks', icon: '🌐' }
+  ],
+  'english': [
+    { id: 'grammar', name: 'Grammar', icon: '📝' },
+    { id: 'literature', name: 'Literature', icon: '📖' },
+    { id: 'vocabulary', name: 'Vocabulary', icon: '📚' },
+    { id: 'writing', name: 'Writing', icon: '✍️' },
+    { id: 'reading', name: 'Reading Comprehension', icon: '👓' }
+  ],
+  'history': [
+    { id: 'ancient', name: 'Ancient History', icon: '🏛️' },
+    { id: 'medieval', name: 'Medieval History', icon: '🏰' },
+    { id: 'modern', name: 'Modern History', icon: '🏭' },
+    { id: 'world-wars', name: 'World Wars', icon: '⚔️' },
+    { id: 'indian', name: 'Indian History', icon: '🇮🇳' }
+  ],
+  'geography': [
+    { id: 'physical', name: 'Physical Geography', icon: '🏔️' },
+    { id: 'human', name: 'Human Geography', icon: '👥' },
+    { id: 'economic', name: 'Economic Geography', icon: '💰' },
+    { id: 'political', name: 'Political Geography', icon: '🗺️' }
+  ]
 };
+
+const difficulties = [
+  { id: 'easy', name: 'Easy', icon: '🟢', description: 'Perfect for beginners' },
+  { id: 'medium', name: 'Medium', icon: '🟡', description: 'Good challenge level' },
+  { id: 'hard', name: 'Hard', icon: '🔴', description: 'Expert level questions' }
+];
 
 export default function Quiz() {
   const [quizMode, setQuizMode] = useState<'setup' | 'quiz' | 'results' | 'review'>('setup');
+  const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -78,7 +147,7 @@ export default function Quiz() {
   };
 
   const generateQuiz = async () => {
-    if (!selectedSubject) return;
+    if (!selectedClass || !selectedSubject) return;
 
     setIsLoading(true);
     try {
@@ -86,9 +155,9 @@ export default function Quiz() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          class: 'Class 10',
+          class: selectedClass,
           subject: selectedSubject,
-          topic: selectedTopic === 'mixed' ? undefined : selectedTopic || undefined,
+          topic: selectedChapter || undefined,
           difficulty: selectedDifficulty,
           count: 10
         })
@@ -104,7 +173,6 @@ export default function Quiz() {
       setQuizMode('quiz');
     } catch (error) {
       console.error('Quiz generation error:', error);
-      // Use fallback sample questions to keep app functional
       const sampleQuestions: QuizQuestion[] = [
         {
           id: '1',
@@ -130,8 +198,6 @@ export default function Quiz() {
       setCurrentQuestionIndex(0);
       setTimer(0);
       setQuizMode('quiz');
-      // Show a non-blocking notification instead of alert
-      console.warn('Using fallback questions due to API error');
     } finally {
       setIsLoading(false);
     }
@@ -175,17 +241,15 @@ export default function Quiz() {
 
     setQuizResults(results);
 
-    // Save to history
     addQuizResult({
       subject: selectedSubject,
-      topic: selectedTopic === 'mixed' || !selectedTopic ? 'Mixed Topics' : selectedTopic,
+      topic: selectedChapter || 'Mixed Topics',
       score,
       totalQuestions: questions.length,
       timeSpent: timer,
       difficulty: selectedDifficulty
     });
 
-    // Update user points
     const pointsEarned = Math.max(score - 50, 0);
     updateProfile({ totalPoints: prev => (prev || 0) + pointsEarned });
 
@@ -194,8 +258,9 @@ export default function Quiz() {
 
   const resetQuiz = () => {
     setQuizMode('setup');
+    setSelectedClass('');
     setSelectedSubject('');
-    setSelectedTopic('');
+    setSelectedChapter('');
     setQuestions([]);
     setUserAnswers([]);
     setCurrentQuestionIndex(0);
@@ -225,69 +290,156 @@ export default function Quiz() {
 
   if (quizMode === 'setup') {
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Start New Quiz
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Subject</label>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedSubject && (
-              <div>
-                <label className="text-sm font-medium mb-2 block">Topic (Optional)</label>
-                <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a topic or leave for mixed" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mixed">Mixed Topics</SelectItem>
-                    {topicsBySubject[selectedSubject]?.map(topic => (
-                      <SelectItem key={topic} value={topic}>{topic}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+      <div className="premium-container">
+        {/* Header */}
+        <Card className="premium-card glass-morphism animate-slide-up">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                <Brain className="h-7 w-7 text-white" />
               </div>
-            )}
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Difficulty</label>
-              <Select value={selectedDifficulty} onValueChange={(value: any) => setSelectedDifficulty(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <h1 className="text-2xl font-bold gradient-text">Start New Quiz</h1>
+                <p className="text-foreground-secondary">Choose your preferences and begin learning</p>
+              </div>
             </div>
-
-            <Button 
-              onClick={generateQuiz} 
-              disabled={!selectedSubject || isLoading}
-              className="w-full"
-            >
-              {isLoading ? 'Generating Quiz...' : 'Start Quiz'}
-            </Button>
           </CardContent>
         </Card>
+
+        {/* Class Selection */}
+        <Card className="premium-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Select Your Class
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {classes.map(cls => (
+                <Button
+                  key={cls.id}
+                  variant={selectedClass === cls.id ? "default" : "outline"}
+                  onClick={() => setSelectedClass(cls.id)}
+                  className="h-16 flex flex-col gap-1"
+                >
+                  <span className="text-lg">{cls.icon}</span>
+                  <span className="text-sm font-medium">{cls.name}</span>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Subject Selection */}
+        {selectedClass && (
+          <Card className="premium-card animate-slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Library className="h-5 w-5" />
+                Choose Subject
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {subjects.map(subject => (
+                  <Button
+                    key={subject.id}
+                    variant={selectedSubject === subject.id ? "default" : "outline"}
+                    onClick={() => {
+                      setSelectedSubject(subject.id);
+                      setSelectedChapter(''); // Reset chapter when subject changes
+                    }}
+                    className="h-20 flex flex-col gap-2 relative overflow-hidden"
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${subject.color} opacity-10`} />
+                    <span className="text-xl relative z-10">{subject.icon}</span>
+                    <span className="text-sm font-medium relative z-10">{subject.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Chapter Selection (Optional) */}
+        {selectedSubject && (
+          <Card className="premium-card animate-slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Select Chapter (Optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Button
+                  variant={selectedChapter === '' ? "default" : "outline"}
+                  onClick={() => setSelectedChapter('')}
+                  className="w-full justify-start"
+                >
+                  <span className="mr-2">📚</span>
+                  All Chapters (Mixed)
+                </Button>
+                
+                <div className="grid grid-cols-1 gap-2">
+                  {chaptersBySubject[selectedSubject]?.map(chapter => (
+                    <Button
+                      key={chapter.id}
+                      variant={selectedChapter === chapter.id ? "default" : "outline"}
+                      onClick={() => setSelectedChapter(chapter.id)}
+                      className="justify-start"
+                    >
+                      <span className="mr-2">{chapter.icon}</span>
+                      {chapter.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Difficulty Selection */}
+        {selectedSubject && (
+          <Card className="premium-card animate-slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Difficulty Level
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3">
+                {difficulties.map(diff => (
+                  <Button
+                    key={diff.id}
+                    variant={selectedDifficulty === diff.id ? "default" : "outline"}
+                    onClick={() => setSelectedDifficulty(diff.id as any)}
+                    className="h-20 flex flex-col gap-1"
+                  >
+                    <span className="text-xl">{diff.icon}</span>
+                    <span className="font-medium">{diff.name}</span>
+                    <span className="text-xs text-muted-foreground">{diff.description}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Start Quiz Button */}
+        {selectedClass && selectedSubject && (
+          <Button 
+            onClick={generateQuiz} 
+            disabled={isLoading}
+            className="w-full h-14 text-lg font-semibold premium-button animate-slide-up"
+            loading={isLoading}
+          >
+            <Play className="h-5 w-5 mr-2" />
+            {isLoading ? 'Generating Quiz...' : 'Start Quiz'}
+          </Button>
+        )}
       </div>
     );
   }
@@ -305,8 +457,8 @@ export default function Quiz() {
     );
 
     return (
-      <div className="p-4 space-y-6 pb-20">
-        <Card>
+      <div className="premium-container">
+        <Card className="premium-card">
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
               <Trophy className="h-5 w-5" />
@@ -366,7 +518,7 @@ export default function Quiz() {
     const isCorrect = userAnswer === currentQuestion.correctAnswer;
 
     return (
-      <div className="p-4 space-y-6 pb-20">
+      <div className="premium-container">
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -448,7 +600,7 @@ export default function Quiz() {
   }
 
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="premium-container">
       {/* Quiz Header */}
       <Card className="premium-card glass-morphism animate-slide-up">
         <CardContent className="p-8">
@@ -459,8 +611,12 @@ export default function Quiz() {
                   <Brain className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gradient-primary">Physics Quiz</h1>
-                  <p className="text-foreground-secondary">Master the fundamentals of mechanics</p>
+                  <h1 className="text-2xl font-bold text-gradient-primary">
+                    {subjects.find(s => s.id === selectedSubject)?.name} Quiz
+                  </h1>
+                  <p className="text-foreground-secondary">
+                    {selectedChapter ? chaptersBySubject[selectedSubject]?.find(c => c.id === selectedChapter)?.name : 'Mixed Topics'}
+                  </p>
                 </div>
               </div>
             </div>

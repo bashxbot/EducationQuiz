@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
 
   // Add loading check
-  if (!profile || !quizHistory || !reasoningProgress) { // Added checks for quizHistory and reasoningProgress as they are crucial for stats
+  if (!profile || !quizHistory || !reasoningProgress) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -83,8 +84,21 @@ export default function Profile() {
   const totalReasoningChallenges = reasoningProgress?.totalSolved || 0;
   const reasoningAccuracy = reasoningProgress?.accuracyRate || 0;
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
+    // Update profile locally and globally
     updateProfile(editedProfile);
+    
+    // Also send to server to update globally
+    try {
+      await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedProfile)
+      });
+    } catch (error) {
+      console.error('Error updating profile globally:', error);
+    }
+    
     setIsEditing(false);
   };
 
@@ -119,7 +133,7 @@ export default function Profile() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'neolearn-data.json';
+    a.download = 'learning-data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -194,14 +208,14 @@ export default function Profile() {
               ) : (
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-xl font-bold gradient-text font-heading">{profile?.name || 'Neo User'}</h2>
+                    <h2 className="text-xl font-bold gradient-text font-heading">{profile?.name || 'Student'}</h2>
                     <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)} className="hover:text-primary">
                       <Edit3 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-muted-foreground text-sm font-body">{profile?.email || 'user@neolearn.ai'}</p>
+                  <p className="text-muted-foreground text-sm font-body">{profile?.email || 'user@school.edu'}</p>
                   <p className="text-muted-foreground text-sm font-body">
-                    {profile?.class || 'Neural Class'} • {profile?.school || 'Digital Academy'}
+                    {profile?.class || 'Class 10'} • {profile?.school || 'School'}
                   </p>
                 </div>
               )}
@@ -216,21 +230,21 @@ export default function Profile() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="neon-border">
+        <Card className="premium-card hover:shadow-lg transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Zap className="h-5 w-5 text-primary" />
-              <div className="text-2xl font-bold text-neon font-heading">{profile?.totalPoints || 0}</div>
+              <div className="text-2xl font-bold text-primary font-heading">{profile?.totalPoints || 0}</div>
             </div>
-            <p className="text-sm text-muted-foreground font-body">Neural Points</p>
+            <p className="text-sm text-muted-foreground font-body">Total Points</p>
           </CardContent>
         </Card>
 
-        <Card className="neon-border">
+        <Card className="premium-card hover:shadow-lg transition-shadow">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Flame className="h-5 w-5 text-accent" />
-              <div className="text-2xl font-bold text-neon-accent font-heading">{profile?.currentStreak || 0}</div>
+              <div className="text-2xl font-bold text-accent font-heading">{profile?.currentStreak || 0}</div>
             </div>
             <p className="text-sm text-muted-foreground font-body">Day Streak</p>
           </CardContent>
@@ -238,29 +252,29 @@ export default function Profile() {
       </div>
 
       {/* Academic Performance */}
-      <Card className="neon-border">
+      <Card className="premium-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 gradient-text">
             <Trophy className="h-5 w-5" />
-            Neural Performance
+            Academic Performance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
-              <div className="text-lg font-bold text-neon font-heading">{totalQuizzes}</div>
-              <p className="text-sm text-muted-foreground font-body">Neural Tests</p>
+            <div className="text-center p-3 bg-surface/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="text-lg font-bold text-primary font-heading">{totalQuizzes}</div>
+              <p className="text-sm text-muted-foreground font-body">Tests Completed</p>
             </div>
-            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors">
-              <div className="text-lg font-bold text-neon-accent font-heading">{averageScore}%</div>
-              <p className="text-sm text-muted-foreground font-body">Avg Score</p>
+            <div className="text-center p-3 bg-surface/50 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors">
+              <div className="text-lg font-bold text-accent font-heading">{averageScore}%</div>
+              <p className="text-sm text-muted-foreground font-body">Average Score</p>
             </div>
-            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-blue-500/20 hover:border-blue-500/40 transition-colors">
-              <div className="text-lg font-bold text-neon-blue font-heading">{totalReasoningChallenges}</div>
+            <div className="text-center p-3 bg-surface/50 rounded-lg border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+              <div className="text-lg font-bold text-blue-500 font-heading">{totalReasoningChallenges}</div>
               <p className="text-sm text-muted-foreground font-body">Logic Puzzles</p>
             </div>
-            <div className="text-center p-3 bg-secondary/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
-              <div className="text-lg font-bold text-neon font-heading">{reasoningAccuracy}%</div>
+            <div className="text-center p-3 bg-surface/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="text-lg font-bold text-primary font-heading">{reasoningAccuracy}%</div>
               <p className="text-sm text-muted-foreground font-body">Logic Accuracy</p>
             </div>
           </div>
@@ -268,22 +282,22 @@ export default function Profile() {
       </Card>
 
       {/* Badges & Achievements */}
-      <Card className="neon-border">
+      <Card className="premium-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 gradient-text">
             <Award className="h-5 w-5" />
-            Neural Badges
+            Achievements & Badges
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2 font-body">
               <span>Progress: {badgeStats.earned}/{badgeStats.total}</span>
-              <span className="text-neon">{badgeStats.progress}%</span>
+              <span className="text-primary">{badgeStats.progress}%</span>
             </div>
-            <div className="w-full bg-secondary rounded-full h-3 border border-primary/20">
+            <div className="w-full bg-surface rounded-full h-3 border border-primary/20">
               <div 
-                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(0,255,136,0.5)]" 
+                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-lg" 
                 style={{ width: `${badgeStats.progress}%` }}
               ></div>
             </div>
@@ -294,7 +308,7 @@ export default function Profile() {
               <div key={`badge-${badge.id}-${index}`} className="text-center">
                 <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl transition-all duration-300 ${
                   earnedBadgeIds.has(badge.id) 
-                    ? 'bg-gradient-to-br from-primary to-accent text-black shadow-[0_0_15px_rgba(0,255,136,0.5)]' 
+                    ? 'bg-gradient-to-br from-primary to-accent text-white shadow-lg' 
                     : 'bg-muted text-muted-foreground border border-border'
                 }`}>
                   {badge.id === 'scholar' && <BookOpen className="h-6 w-6" />}
@@ -312,29 +326,29 @@ export default function Profile() {
       </Card>
 
       {/* Recent Activity */}
-      <Card className="neon-border">
+      <Card className="premium-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 gradient-text">
             <History className="h-5 w-5" />
-            Neural Activity
+            Recent Activity
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {(quizHistory || []).slice(0, 5).map((quiz: any, index: number) => (
-              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-secondary/30 rounded-lg border border-primary/10 hover:border-primary/30 transition-colors">
+              <div key={`quiz-${quiz.subject}-${quiz.completedAt}-${index}`} className="flex justify-between items-center p-3 bg-surface/30 rounded-lg border border-primary/10 hover:border-primary/30 transition-colors">
                 <div>
-                  <p className="font-medium text-neon font-body">{quiz.subject}</p>
+                  <p className="font-medium text-primary font-body">{quiz.subject}</p>
                   <p className="text-sm text-muted-foreground font-body">{quiz.topic}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-neon-accent font-heading">{quiz.score}%</p>
+                  <p className="font-bold text-accent font-heading">{quiz.score}%</p>
                   <p className="text-sm text-muted-foreground font-body">{quiz.difficulty}</p>
                 </div>
               </div>
             ))}
             {(!quizHistory || quizHistory.length === 0) && (
-              <p className="text-center text-muted-foreground py-4 font-body">No neural activity detected</p>
+              <p className="text-center text-muted-foreground py-4 font-body">No recent activity</p>
             )}
           </div>
         </CardContent>
@@ -342,54 +356,54 @@ export default function Profile() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="neon-card border-primary/30">
+        <DialogContent className="premium-card border-primary/30">
           <DialogHeader>
-            <DialogTitle className="gradient-text font-heading">Neural Settings</DialogTitle>
+            <DialogTitle className="gradient-text font-heading">Settings</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block font-body">Interface Theme</label>
+              <label className="text-sm font-medium mb-2 block font-body">Theme</label>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant={theme === 'dark' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('dark')}
                 >
-                  Dark Neo
+                  Dark Mode
                 </Button>
                 <Button 
                   variant={theme === 'system' ? 'default' : 'outline'} 
                   size="sm"
                   onClick={() => setTheme('system')}
                 >
-                  Auto Neo
+                  Auto Mode
                 </Button>
               </div>
             </div>
 
             <div className="border-t border-primary/20 pt-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2 text-neon font-heading">
+              <h3 className="font-medium mb-3 flex items-center gap-2 text-primary font-heading">
                 <Shield className="h-4 w-4" />
-                Data Control
+                Data Management
               </h3>
               <div className="space-y-2">
                 <Button variant="outline" onClick={exportData} className="w-full justify-start border-primary/30 hover:border-primary">
                   <Download className="h-4 w-4 mr-2" />
-                  Export Neural Data
+                  Export Learning Data
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive">
                       <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset Neural Matrix
+                      Reset All Data
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="neon-card border-destructive/30">
+                  <AlertDialogContent className="premium-card border-destructive/30">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="text-destructive font-heading">Reset Neural Matrix</AlertDialogTitle>
+                      <AlertDialogTitle className="text-destructive font-heading">Reset All Data</AlertDialogTitle>
                       <AlertDialogDescription className="font-body">
-                        This action cannot be undone. This will permanently delete all your neural progress, test history, and achievements.
+                        This action cannot be undone. This will permanently delete all your progress, test history, and achievements.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
