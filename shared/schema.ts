@@ -8,10 +8,14 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
   class: text("class").notNull(),
+  school: text("school").notNull(),
   totalPoints: integer("total_points").default(0),
   currentStreak: integer("current_streak").default(0),
   joinDate: timestamp("join_date").defaultNow(),
+  isAuthenticated: boolean("is_authenticated").default(false),
 });
 
 export const chatMessages = pgTable("chat_messages", {
@@ -43,6 +47,7 @@ export const reasoningChallenges = pgTable("reasoning_challenges", {
   category: text("category").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
+  explanation: text("explanation"),
   userAnswer: text("user_answer"),
   correct: boolean("correct"),
   points: integer("points").default(0),

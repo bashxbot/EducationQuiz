@@ -1,4 +1,12 @@
+import { eq, desc, and } from "drizzle-orm";
+import { db } from "./db";
 import { 
+  users,
+  chatMessages, 
+  quizzes,
+  reasoningChallenges,
+  userProgress,
+  badges,
   type User, 
   type InsertUser, 
   type ChatMessage, 
@@ -12,7 +20,6 @@ import {
   type Badge,
   type InsertBadge
 } from "@shared/schema";
-import { randomUUID } from "crypto";
 
 export interface IStorage {
   // User operations
@@ -46,200 +53,148 @@ export interface IStorage {
   awardBadge(badge: InsertBadge): Promise<Badge>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User> = new Map();
-  private chatMessages: Map<string, ChatMessage> = new Map();
-  private quizzes: Map<string, Quiz> = new Map();
-  private reasoningChallenges: Map<string, ReasoningChallenge> = new Map();
-  private userProgress: Map<string, UserProgress> = new Map();
-  private badges: Map<string, Badge> = new Map();
-
-  constructor() {
-    // Initialize with a demo user
-    const demoUser: User = {
-      id: "demo-user",
-      username: "demo",
-      password: "password",
-      name: "Alex Kumar",
-      class: "Class 10",
-      totalPoints: 1240,
-      currentStreak: 7,
-      joinDate: new Date("2024-03-01"),
-    };
-    this.users.set(demoUser.id, demoUser);
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      totalPoints: 0,
-      currentStreak: 0,
-      joinDate: new Date() 
-    };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    const [user] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return user || undefined;
   }
 
   async getChatHistory(userId: string, limit = 50): Promise<ChatMessage[]> {
-    return Array.from(this.chatMessages.values())
-      .filter(msg => msg.userId === userId)
-      .sort((a, b) => (a.timestamp?.getTime() || 0) - (b.timestamp?.getTime() || 0))
-      .slice(-limit);
+    const messages = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.timestamp))
+      .limit(limit);
+    
+    return messages.reverse();
   }
 
   async addChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
-    const id = randomUUID();
-    const message: ChatMessage = {
-      ...insertMessage,
-      id,
-      timestamp: new Date(),
-    };
-    this.chatMessages.set(id, message);
+    const [message] = await db
+      .insert(chatMessages)
+      .values(insertMessage)
+      .returning();
     return message;
   }
 
   async clearChatHistory(userId: string): Promise<void> {
-    for (const [id, message] of this.chatMessages.entries()) {
-      if (message.userId === userId) {
-        this.chatMessages.delete(id);
-      }
-    }
+    await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
   }
 
   async createQuiz(insertQuiz: InsertQuiz): Promise<Quiz> {
-    const id = randomUUID();
-    const quiz: Quiz = {
-      ...insertQuiz,
-      id,
-      completed: false,
-      createdAt: new Date(),
-      completedAt: null,
-    };
-    this.quizzes.set(id, quiz);
+    const [quiz] = await db
+      .insert(quizzes)
+      .values(insertQuiz)
+      .returning();
     return quiz;
   }
 
   async getQuiz(id: string): Promise<Quiz | undefined> {
-    return this.quizzes.get(id);
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+    return quiz || undefined;
   }
 
   async getUserQuizzes(userId: string): Promise<Quiz[]> {
-    return Array.from(this.quizzes.values())
-      .filter(quiz => quiz.userId === userId)
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    return await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.userId, userId))
+      .orderBy(desc(quizzes.createdAt));
   }
 
   async updateQuizScore(id: string, score: number, completed: boolean): Promise<Quiz | undefined> {
-    const quiz = this.quizzes.get(id);
-    if (!quiz) return undefined;
-
-    const updatedQuiz = {
-      ...quiz,
-      score,
-      completed,
-      completedAt: completed ? new Date() : null,
-    };
-    this.quizzes.set(id, updatedQuiz);
-    return updatedQuiz;
+    const [quiz] = await db
+      .update(quizzes)
+      .set({ 
+        score, 
+        completed, 
+        completedAt: completed ? new Date() : null 
+      })
+      .where(eq(quizzes.id, id))
+      .returning();
+    return quiz || undefined;
   }
 
   async createReasoningChallenge(insertChallenge: InsertReasoningChallenge): Promise<ReasoningChallenge> {
-    const id = randomUUID();
-    const challenge: ReasoningChallenge = {
-      ...insertChallenge,
-      id,
-      createdAt: new Date(),
-      completedAt: null,
-    };
-    this.reasoningChallenges.set(id, challenge);
+    const [challenge] = await db
+      .insert(reasoningChallenges)
+      .values(insertChallenge)
+      .returning();
     return challenge;
   }
 
   async getUserReasoningChallenges(userId: string): Promise<ReasoningChallenge[]> {
-    return Array.from(this.reasoningChallenges.values())
-      .filter(challenge => challenge.userId === userId)
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    return await db
+      .select()
+      .from(reasoningChallenges)
+      .where(eq(reasoningChallenges.userId, userId))
+      .orderBy(desc(reasoningChallenges.createdAt));
   }
 
   async updateReasoningAnswer(id: string, answer: string, correct: boolean, points: number): Promise<ReasoningChallenge | undefined> {
-    const challenge = this.reasoningChallenges.get(id);
-    if (!challenge) return undefined;
-
-    const updatedChallenge = {
-      ...challenge,
-      userAnswer: answer,
-      correct,
-      points,
-      completedAt: new Date(),
-    };
-    this.reasoningChallenges.set(id, updatedChallenge);
-    return updatedChallenge;
+    const [challenge] = await db
+      .update(reasoningChallenges)
+      .set({ 
+        userAnswer: answer,
+        correct,
+        points,
+        completedAt: new Date()
+      })
+      .where(eq(reasoningChallenges.id, id))
+      .returning();
+    return challenge || undefined;
   }
 
   async getUserProgress(userId: string): Promise<UserProgress[]> {
-    return Array.from(this.userProgress.values())
-      .filter(progress => progress.userId === userId);
+    return await db
+      .select()
+      .from(userProgress)
+      .where(eq(userProgress.userId, userId));
   }
 
   async updateUserProgress(insertProgress: InsertUserProgress): Promise<UserProgress> {
-    const existingProgress = Array.from(this.userProgress.values())
-      .find(p => p.userId === insertProgress.userId && p.subject === insertProgress.subject);
-
-    if (existingProgress) {
-      const updatedProgress = {
-        ...existingProgress,
-        ...insertProgress,
-        updatedAt: new Date(),
-      };
-      this.userProgress.set(existingProgress.id, updatedProgress);
-      return updatedProgress;
-    } else {
-      const id = randomUUID();
-      const progress: UserProgress = {
-        ...insertProgress,
-        id,
-        updatedAt: new Date(),
-      };
-      this.userProgress.set(id, progress);
-      return progress;
-    }
+    const [progress] = await db
+      .insert(userProgress)
+      .values(insertProgress)
+      .onConflictDoUpdate({
+        target: [userProgress.userId, userProgress.subject],
+        set: insertProgress
+      })
+      .returning();
+    return progress;
   }
 
   async getUserBadges(userId: string): Promise<Badge[]> {
-    return Array.from(this.badges.values())
-      .filter(badge => badge.userId === userId)
-      .sort((a, b) => (b.earnedAt?.getTime() || 0) - (a.earnedAt?.getTime() || 0));
+    return await db
+      .select()
+      .from(badges)
+      .where(eq(badges.userId, userId))
+      .orderBy(desc(badges.earnedAt));
   }
 
   async awardBadge(insertBadge: InsertBadge): Promise<Badge> {
-    const id = randomUUID();
-    const badge: Badge = {
-      ...insertBadge,
-      id,
-      earnedAt: new Date(),
-    };
-    this.badges.set(id, badge);
+    const [badge] = await db
+      .insert(badges)
+      .values(insertBadge)
+      .returning();
     return badge;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
