@@ -25,7 +25,8 @@ import {
   Play,
   Settings2,
   Trophy,
-  ChevronRight
+  ChevronRight,
+  History
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReasoningChallenge } from "@shared/schema";
@@ -52,17 +53,6 @@ const reasoningTypes = [
   { id: "timed", name: "Timed Challenge", icon: <Timer className="h-5 w-5" />, description: "Race against time" },
 ];
 
-// Helper function to get a random problem (replace with actual logic if needed)
-const getRandomProblem = () => {
-  // This is a placeholder. In a real app, you'd fetch or select a random challenge.
-  return {
-    id: Math.random().toString(36).substring(7),
-    difficulty: "medium",
-    category: "logic",
-    question: "What is the next number in the sequence: 1, 4, 9, 16, 25, ?",
-    answer: "36"
-  };
-};
 
 export default function Reasoning() {
   const [currentChallenge, setCurrentChallenge] = useState<ReasoningChallenge | null>(null);
@@ -83,11 +73,11 @@ export default function Reasoning() {
 
   const { data: user } = useQuery({
     queryKey: ["/api/user"],
-  });
+  }) as { data: { id: string; name: string; currentStreak: number; totalPoints: number } | undefined };
 
   const { data: reasoningHistory = [] } = useQuery({
     queryKey: ["/api/reasoning/history"],
-  });
+  }) as { data: ReasoningChallenge[] };
 
   const generateChallengeMutation = useMutation({
     mutationFn: async (params: { difficulty: string; category: string }) => {
@@ -196,6 +186,15 @@ export default function Reasoning() {
                 {challengeResult.answer}
               </p>
             </div>
+
+            {challengeResult.explanation && (
+              <div className="text-center">
+                <p className="font-medium mb-2 text-foreground-secondary">Explanation:</p>
+                <p className="text-sm bg-accent/10 p-3 rounded-lg text-left">
+                  {challengeResult.explanation}
+                </p>
+              </div>
+            )}
 
             {challengeResult.correct && (
               <div className="text-center">
@@ -322,6 +321,49 @@ export default function Reasoning() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Review Previous Challenges */}
+        {reasoningHistory.length > 0 && (
+          <Card className="premium-card glass-morphism animate-slide-up delay-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Review Previous Challenges
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {reasoningHistory.slice(0, 5).map((challenge, index) => (
+                  <div key={`${challenge.id}-${index}`} className="flex items-center justify-between p-3 bg-surface/30 rounded-lg border border-primary/10">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-primary capitalize">
+                        {challenge.difficulty} • {challenge.category}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate max-w-48">
+                        {challenge.question}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {challenge.correct ? (
+                        <Badge className="bg-success text-xs">Correct</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="text-xs">Wrong</Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {challenge.points || 0} pts
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {reasoningHistory.length > 5 && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Showing recent 5 of {reasoningHistory.length} challenges
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4">
