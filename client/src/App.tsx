@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -76,13 +75,10 @@ function App() {
 
                 {/* Ambient lighting effects */}
                 <div className="fixed top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-                <div className="fixed bottom-0 left-0 w-full h-64 bg-gradient-to-t from-accent/5 to-transparent pointer-events-none" />
               </div>
             ) : (
-              <Router />
+              <Welcome />
             )}
-
-            <Toaster />
           </TooltipProvider>
         </AchievementProvider>
       </ThemeProvider>
