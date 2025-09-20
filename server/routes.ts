@@ -13,17 +13,29 @@ router.get('/api/user', async (req, res) => {
     let user = await storage.getUser('demo-user');
     
     if (!user) {
-      user = await storage.createUser({
-        username: 'demo',
-        password: 'temp', // Will be removed when auth is implemented
-        name: 'Alex Kumar',
-        email: 'alex@example.com',
-        class: 'Class 10',
-        school: 'Excellence High School',
-        totalPoints: 0,
-        currentStreak: 0,
-        isAuthenticated: false
-      });
+      try {
+        user = await storage.createUser({
+          username: 'demo',
+          password: 'temp', // Will be removed when auth is implemented
+          name: 'Alex Kumar',
+          email: 'alex@example.com',
+          class: 'Class 10',
+          school: 'Excellence High School',
+          totalPoints: 0,
+          currentStreak: 0,
+          isAuthenticated: false
+        });
+      } catch (createError: any) {
+        // If user already exists due to constraint, try to fetch again
+        if (createError.code === '23505') {
+          user = await storage.getUser('demo-user');
+          if (!user) {
+            throw new Error('Failed to create or fetch demo user');
+          }
+        } else {
+          throw createError;
+        }
+      }
     }
     
     res.json(user);

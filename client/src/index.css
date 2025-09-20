@@ -280,6 +280,30 @@ body::before {
     animation: shimmer 2s linear infinite;
   }
 
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce 2s infinite;
+  }
+
+  .animate-float-slow {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .animate-gradient {
+    animation: gradientShift 3s ease-in-out infinite;
+  }
+
+  .animate-typewriter {
+    animation: typewriter 4s steps(40) infinite;
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -335,6 +359,62 @@ body::before {
   @keyframes shimmer {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
+  }
+
+  @keyframes glow {
+    from { 
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+      filter: brightness(1);
+    }
+    to { 
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.8);
+      filter: brightness(1.2);
+    }
+  }
+
+  @keyframes gradientShift {
+    0%, 100% { 
+      background-position: 0% 50%; 
+    }
+    50% { 
+      background-position: 100% 50%; 
+    }
+  }
+
+  @keyframes typewriter {
+    0%, 100% { width: 0; }
+    50% { width: 100%; }
+  }
+
+  @keyframes rotateAndScale {
+    0% { 
+      transform: rotate(0deg) scale(1);
+    }
+    50% { 
+      transform: rotate(180deg) scale(1.1);
+    }
+    100% { 
+      transform: rotate(360deg) scale(1);
+    }
+  }
+
+  @keyframes morphShape {
+    0%, 100% { 
+      border-radius: 50%;
+      transform: rotate(0deg);
+    }
+    25% { 
+      border-radius: 0%;
+      transform: rotate(90deg);
+    }
+    50% { 
+      border-radius: 50% 0% 50% 0%;
+      transform: rotate(180deg);
+    }
+    75% { 
+      border-radius: 0% 50% 0% 50%;
+      transform: rotate(270deg);
+    }
   }
 
   .shimmer-effect {
@@ -478,6 +558,22 @@ body::before {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: var(--blur-lg);
     border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 
+      0 4px 24px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   /* Interactive Elements */
