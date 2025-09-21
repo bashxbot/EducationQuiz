@@ -406,9 +406,8 @@ export default function Leaderboard() {
         </TabsList>
 
         <TabsContent value="global" className="space-y-4">
-          {/* Main Rankings Container - Fixed Height with Scroll */}
           <Card className="premium-card">
-            <CardHeader className="pb-4">
+            <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Award className="h-5 w-5" />
@@ -422,16 +421,10 @@ export default function Leaderboard() {
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="border-t border-border">
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-2 p-6">
-                    {leaderboard.slice(0, 100).map((entry, index) => (
-                      <LeaderboardEntry key={`${entry.id}-${index}`} entry={entry} />
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
+            <CardContent className="space-y-2">
+              {leaderboard.slice(0, 100).map((entry, index) => (
+                <LeaderboardEntry key={`${entry.id}-${index}`} entry={entry} />
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

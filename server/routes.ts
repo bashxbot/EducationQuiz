@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
-import { generateQuiz, generateChat, generateReasoning } from './services/gemini';
+import { generateQuiz, generateChat, generateChatStream, generateReasoning } from './services/gemini';
 import { storage } from './storage';
 
 const router = Router();
@@ -370,20 +370,12 @@ router.post('/api/chat/stream', async (req, res) => {
     
     try {
       const imageData = image ? { base64: image, mimeType: mimeType || 'image/jpeg' } : undefined;
-      const response = await generateChat(content, imageData);
-      fullResponse = response;
       
-      // Stream the response word by word for better UX
-      const words = response.split(' ');
-      
-      for (let i = 0; i < words.length; i++) {
-        const chunk = i === 0 ? words[i] : ' ' + words[i];
-        
-        // Send as Server-Sent Event format
+      // Use real streaming from Gemini
+      for await (const chunk of generateChatStream(content, imageData)) {
+        fullResponse += chunk;
+        // Send each chunk as Server-Sent Event
         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
-        
-        // Add a small delay to simulate real streaming
-        await new Promise(resolve => setTimeout(resolve, 50));
       }
       
     } catch (aiError) {
@@ -398,12 +390,7 @@ router.post('/api/chat/stream', async (req, res) => {
       fullResponse = fallbackResponse;
       
       // Stream the fallback response
-      const words = fallbackResponse.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        const chunk = i === 0 ? words[i] : ' ' + words[i];
-        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      res.write(`data: ${JSON.stringify({ content: fallbackResponse })}\n\n`);
     }
     
     // Send completion signal
