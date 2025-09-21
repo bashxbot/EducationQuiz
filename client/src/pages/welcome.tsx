@@ -460,7 +460,8 @@ export default function Welcome() {
     email: '',
     phone: '',
     class: '',
-    school: ''
+    school: '',
+    password: ''
   });
   const [loginData, setLoginData] = useState({
     email: '',
@@ -493,9 +494,56 @@ export default function Welcome() {
     } else if (field === 'school') {
       setShowSchoolSuggestions(false);
     }
+    
+    // Real-time validation for email and phone
+    if (field === 'email' && value.length > 5) {
+      checkEmailAvailability(value);
+    }
+    if (field === 'phone' && value.length > 8) {
+      checkPhoneAvailability(value);
+    }
+    
     // Clear errors when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const checkEmailAvailability = async (email: string) => {
+    if (!isValidEmail(email)) return;
+    
+    try {
+      const response = await fetch('/api/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      
+      if (data.taken) {
+        setErrors(prev => ({ ...prev, email: 'This email is already registered' }));
+      }
+    } catch (error) {
+      console.error('Email check failed:', error);
+    }
+  };
+
+  const checkPhoneAvailability = async (phone: string) => {
+    if (!isValidPhone(phone)) return;
+    
+    try {
+      const response = await fetch('/api/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await response.json();
+      
+      if (data.taken) {
+        setErrors(prev => ({ ...prev, phone: 'This phone number is already registered' }));
+      }
+    } catch (error) {
+      console.error('Phone check failed:', error);
     }
   };
 
@@ -516,7 +564,7 @@ export default function Welcome() {
   };
 
   const canProceed = () => {
-    return formData.name && formData.email && formData.phone && formData.class && formData.school;
+    return formData.name && formData.email && formData.phone && formData.class && formData.school && formData.password;
   };
 
   const canLogin = () => {
@@ -533,7 +581,7 @@ export default function Welcome() {
     setIsLoading(true);
     setCurrentSection('loading');
 
-    // Simulate login process
+    // Simulate login process with stages
     const stages = [
       'Verifying credentials...',
       'Loading your profile...',
@@ -544,12 +592,12 @@ export default function Welcome() {
     try {
       for (let i = 0; i < stages.length; i++) {
         setLoadingStage(i);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1200));
       }
 
-      // Check stored credentials
+      // Check stored credentials with password validation
       const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const user = storedUsers.find((u: any) => u.email === loginData.email);
+      const user = storedUsers.find((u: any) => u.email === loginData.email && u.password === loginData.password);
 
       if (user) {
         // Login user with stored credentials
@@ -565,6 +613,7 @@ export default function Welcome() {
           joinDate: user.joinDate || new Date().toISOString()
         });
 
+        await new Promise(resolve => setTimeout(resolve, 500));
         setLocation('/dashboard');
       } else {
         // For demo purposes, allow login with demo credentials
@@ -580,6 +629,7 @@ export default function Welcome() {
             currentStreak: 7,
             joinDate: new Date().toISOString()
           });
+          await new Promise(resolve => setTimeout(resolve, 500));
           setLocation('/dashboard');
         } else {
           setLoginErrors({ general: 'Invalid credentials. Please check your email and password.' });
@@ -765,7 +815,7 @@ export default function Welcome() {
       const newUser = {
         id: userId,
         email: formData.email,
-        password: 'defaultpass123', // In real app, this would be hashed
+        password: formData.password, // In real app, this would be hashed
         name: formData.name,
         phone: formData.phone,
         class: formData.class,
@@ -855,6 +905,18 @@ export default function Welcome() {
           newErrors.school = 'School name must be at least 3 characters';
         } else {
           delete newErrors.school;
+        }
+        break;
+
+      case 'password':
+        if (!value.trim()) {
+          newErrors.password = 'Password is required';
+        } else if (value.length < 6) {
+          newErrors.password = 'Password must be at least 6 characters';
+        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+          newErrors.password = 'Password must contain uppercase, lowercase, and number';
+        } else {
+          delete newErrors.password;
         }
         break;
     }
@@ -1811,6 +1873,27 @@ export default function Welcome() {
                   <div className="flex items-center gap-2 text-xs text-destructive">
                     <AlertTriangle className="h-3 w-3" />
                     {errors.phone}
+                  </div>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="Create a password (min 6 characters)"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className={`premium-input ${errors.password ? 'border-destructive' : ''}`}
+                />
+                {errors.password && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {errors.password}
                   </div>
                 )}
               </div>
