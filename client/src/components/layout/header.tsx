@@ -10,11 +10,25 @@ export function Header() {
 
   const handleLogin = () => {
     // Reset profile to show welcome page
-    updateProfile({
-      isAuthenticated: false
-    });
-    // Reload to show welcome page
-    window.location.reload();
+    const defaultProfile = {
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      class: "",
+      school: "",
+      profilePicture: "",
+      totalPoints: 0,
+      currentStreak: 0,
+      joinDate: new Date().toISOString(),
+      isAuthenticated: false,
+    };
+    
+    updateProfile(defaultProfile);
+    // Clear localStorage
+    localStorage.removeItem('eduapp-user-profile');
+    // Redirect to welcome page
+    window.location.href = '/';
   };
 
   return (

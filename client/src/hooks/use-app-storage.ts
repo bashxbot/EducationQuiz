@@ -205,12 +205,29 @@ export function useUserProfile() {
   };
 
   const logoutUser = () => {
-    setProfile(null);
-    // Clear any other stored data
-    localStorage.removeItem('chat_messages'); // Assuming this key might be used elsewhere for chat history
-    localStorage.removeItem('quiz_progress'); // Assuming this key might be used elsewhere for quiz progress
-    localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY); // Explicitly clear chat history
-    localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS); // Explicitly clear quiz progress
+    const defaultProfile: UserProfile = {
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      class: "",
+      school: "",
+      profilePicture: "",
+      totalPoints: 0,
+      currentStreak: 0,
+      joinDate: new Date().toISOString(),
+      isAuthenticated: false,
+    };
+    
+    setProfile(defaultProfile);
+    
+    // Clear all stored data
+    localStorage.removeItem('chat_messages');
+    localStorage.removeItem('quiz_progress');
+    localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
+    localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS);
+    localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+    
     // Force redirect to welcome page
     window.location.href = '/';
   };

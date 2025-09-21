@@ -524,29 +524,74 @@ export default function Welcome() {
   };
 
   const handleLogin = async () => {
-    // Validation logic here
-    if (!canLogin()) return;
+    // Validate login data
+    const emailValid = validateLoginField('email', loginData.email);
+    const passwordValid = validateLoginField('password', loginData.password);
+    
+    if (!emailValid || !passwordValid || !canLogin()) return;
 
     setIsLoading(true);
+    setCurrentSection('loading');
+
+    // Simulate login process
+    const stages = [
+      'Verifying credentials...',
+      'Loading your profile...',
+      'Preparing your dashboard...',
+      'Almost ready...'
+    ];
+
     try {
-      // Simulate login process
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      for (let i = 0; i < stages.length; i++) {
+        setLoadingStage(i);
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
 
-      // In a real app, this would authenticate with backend
-      loginUser({
-        name: 'Demo User',
-        email: loginData.email,
-        phone: '+1234567890',
-        class: '12',
-        school: 'Demo School',
-        id: Date.now().toString()
-      });
+      // Check stored credentials
+      const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const user = storedUsers.find((u: any) => u.email === loginData.email);
 
-      setLocation('/dashboard');
+      if (user) {
+        // Login user with stored credentials
+        loginUser({
+          id: user.id || Date.now().toString(),
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          class: user.class,
+          school: user.school,
+          totalPoints: user.totalPoints || 0,
+          currentStreak: user.currentStreak || 0,
+          joinDate: user.joinDate || new Date().toISOString()
+        });
+
+        setLocation('/dashboard');
+      } else {
+        // For demo purposes, allow login with demo credentials
+        if (loginData.email === 'demo@student.com' && loginData.password === 'password123') {
+          loginUser({
+            id: 'demo-user',
+            name: 'Demo Student',
+            email: 'demo@student.com',
+            phone: '+1234567890',
+            class: '10',
+            school: 'Demo High School',
+            totalPoints: 1250,
+            currentStreak: 7,
+            joinDate: new Date().toISOString()
+          });
+          setLocation('/dashboard');
+        } else {
+          setLoginErrors({ general: 'Invalid credentials. Please check your email and password.' });
+          setIsLoading(false);
+          setCurrentSection('login');
+        }
+      }
     } catch (error) {
-      setLoginErrors({ general: 'Login failed. Please try again.' });
-    } finally {
+      console.error('Login error:', error);
+      setLoginErrors({ general: 'An unexpected error occurred during login.' });
       setIsLoading(false);
+      setCurrentSection('login');
     }
   };
 
@@ -716,27 +761,35 @@ export default function Welcome() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      const userId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      const newUser = {
+        id: userId,
+        email: formData.email,
+        password: 'defaultpass123', // In real app, this would be hashed
+        name: formData.name,
+        phone: formData.phone,
+        class: formData.class,
+        school: formData.school,
+        totalPoints: 0,
+        currentStreak: 0,
+        joinDate: new Date().toISOString()
+      };
+
       // Store user data (in a real app, this would be saved to backend)
-      localStorage.setItem('registeredUsers', JSON.stringify([
-        ...(JSON.parse(localStorage.getItem('registeredUsers') || '[]')),
-        {
-          email: formData.email,
-          password: 'defaultpass123', // In real app, this would be hashed
-          name: formData.name,
-          phone: formData.phone,
-          class: formData.class,
-          school: formData.school
-        }
-      ]));
+      const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      localStorage.setItem('registeredUsers', JSON.stringify([...existingUsers, newUser]));
 
       // Use loginUser to properly authenticate
       loginUser({
+        id: userId,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         class: formData.class,
         school: formData.school,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+        totalPoints: 0,
+        currentStreak: 0,
+        joinDate: new Date().toISOString()
       });
 
       setLocation('/dashboard');
@@ -938,7 +991,18 @@ export default function Welcome() {
     }
   };
 
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (profile?.isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [profile?.isAuthenticated, setLocation]);
+
   if (profile?.isAuthenticated) {
+    return null; // Will redirect to dashboard
+  }
+
+  if (currentSection === 'profile') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
         <ParticleField />
@@ -955,177 +1019,13 @@ export default function Welcome() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              {/* Profile Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Name Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Full Name
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={profileFormData.name}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({ ...prev, name: e.target.value }));
-                      validateProfileField('name', e.target.value);
-                    }}
-                    className={`premium-input ${profileFormErrors.name ? 'border-destructive' : ''}`}
-                  />
-                  {profileFormErrors.name && (
-                    <div className="flex items-center gap-2 text-xs text-destructive">
-                      <AlertTriangle className="h-3 w-3" />
-                      {profileFormErrors.name}
-                    </div>
-                  )}
-                </div>
-
-                {/* Email Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email Address
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="your.email@school.edu"
-                    value={profileFormData.email}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({ ...prev, email: e.target.value }));
-                      validateProfileField('email', e.target.value);
-                    }}
-                    className={`premium-input ${profileFormErrors.email ? 'border-destructive' : ''}`}
-                    disabled // Email might be read-only
-                  />
-                  {profileFormErrors.email && (
-                    <div className="flex items-center gap-2 text-xs text-destructive">
-                      <AlertTriangle className="h-3 w-3" />
-                      {profileFormErrors.email}
-                    </div>
-                  )}
-                </div>
-
-                {/* Phone Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Phone Number
-                  </label>
-                  <Input
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    value={profileFormData.phone}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({ ...prev, phone: e.target.value }));
-                      validateProfileField('phone', e.target.value);
-                    }}
-                    className={`premium-input ${profileFormErrors.phone ? 'border-destructive' : ''}`}
-                  />
-                  {profileFormErrors.phone && (
-                    <div className="flex items-center gap-2 text-xs text-destructive">
-                      <AlertTriangle className="h-3 w-3" />
-                      {profileFormErrors.phone}
-                    </div>
-                  )}
-                </div>
-
-                {/* Class Field */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    Class/Grade
-                  </label>
-                  <Select value={profileFormData.class} onValueChange={(value) => {
-                    setProfileFormData(prev => ({ ...prev, class: value }));
-                    validateProfileField('class', value);
-                  }}>
-                    <SelectTrigger className={`premium-input ${profileFormErrors.class ? 'border-destructive' : ''}`}>
-                      <SelectValue placeholder="Select your class/grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map(cls => (
-                        <SelectItem key={cls.value} value={cls.value}>{cls.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {profileFormErrors.class && (
-                    <div className="flex items-center gap-2 text-xs text-destructive">
-                      <AlertTriangle className="h-3 w-3" />
-                      {profileFormErrors.class}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* School Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <School className="h-4 w-4" />
-                  School/Institution
-                </label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Start typing your school name..."
-                    value={profileFormData.school}
-                    onChange={(e) => {
-                      setProfileFormData(prev => ({ ...prev, school: e.target.value }));
-                      validateProfileField('school', e.target.value);
-                      if (e.target.value.length > 2) {
-                        setSchoolSuggestions(searchSchools(e.target.value));
-                        setShowSchoolSuggestions(true);
-                      } else {
-                        setShowSchoolSuggestions(false);
-                      }
-                    }}
-                    className={`premium-input ${profileFormErrors.school ? 'border-destructive' : ''}`}
-                    onFocus={() => profileFormData.school.length > 2 && setShowSchoolSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSchoolSuggestions(false), 100)} // Hide suggestions on blur, with a slight delay
-                  />
-                  {showSchoolSuggestions && schoolSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                      {schoolSuggestions.map((school, index) => (
-                        <button
-                          key={index}
-                          className="w-full text-left px-4 py-3 hover:bg-surface transition-colors flex items-center gap-3 border-b border-border last:border-b-0"
-                          onClick={() => {
-                            setProfileFormData(prev => ({ ...prev, school }));
-                            setShowSchoolSuggestions(false);
-                            validateProfileField('school', school);
-                          }}
-                        >
-                          <School className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm">{school}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {profileFormErrors.school && (
-                  <div className="flex items-center gap-2 text-xs text-destructive">
-                    <AlertTriangle className="h-3 w-3" />
-                    {profileFormErrors.school}
-                  </div>
-                )}
-              </div>
+              <p className="text-center text-muted-foreground">
+                You are already logged in. Redirecting to dashboard...
+              </p>
             </CardContent>
-            <CardFooter className="flex justify-end gap-4">
-              <Button variant="outline" onClick={() => setCurrentSection('landing')}>Cancel</Button>
-              <Button onClick={async () => {
-                if (canUpdateProfile()) {
-                  await updateProfile({
-                    name: profileFormData.name,
-                    email: profileFormData.email,
-                    phone: profileFormData.phone,
-                    class: profileFormData.class,
-                    school: profileFormData.school
-                  });
-                  // Optionally show a success message
-                  alert('Profile updated successfully!');
-                }
-              }} disabled={!canUpdateProfile()}>
-                Update Profile
+            <CardFooter className="flex justify-center">
+              <Button onClick={() => setLocation('/dashboard')} className="premium-button">
+                Go to Dashboard
               </Button>
             </CardFooter>
           </Card>
