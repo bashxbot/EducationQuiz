@@ -18,7 +18,6 @@ import {
   Mail,
   User,
   BookOpen,
-  Lock,
   LogOut,
   Lightbulb,
   Award,
@@ -110,7 +109,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useUserProfile, isValidEmail, isValidPhone, detectFakeEmail, detectFakePhone } from '@/hooks/use-app-storage';
-import { setLocation } from 'wouter/use-location';
+import { useLocation } from 'wouter';
 
 // Advanced Loading Components
 const LoadingSpinner = () => (
@@ -372,7 +371,7 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }: {
 };
 
 // Mock school API with more realistic data
-const searchSchools = async (query: string): Promise<string[]> => {
+const searchSchools = (query: string): string[] => {
   const schools = [
     'Delhi Public School, R.K. Puram',
     'Delhi Public School, Vasant Kunj',
@@ -451,7 +450,8 @@ const classes = [
 ];
 
 export default function Welcome() {
-  const { profile, updateProfile, loginUser, logoutUser } = useUserProfile();
+  const { profile, updateProfile, loginUser } = useUserProfile();
+  const [, setLocation] = useLocation();
   const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading' | 'profile'>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
@@ -481,6 +481,86 @@ export default function Welcome() {
     class: profile?.class || '',
     school: profile?.school || '',
   });
+
+  // Handler functions
+  const logoutUser = () => {
+    updateProfile({
+      isAuthenticated: false,
+      name: '',
+      email: '',
+      phone: '',
+      class: '',
+      school: '',
+      totalPoints: 0,
+      currentStreak: 0
+    });
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'school' && value.length > 2) {
+      const suggestions = searchSchools(value);
+      setSchoolSuggestions(suggestions);
+      setShowSchoolSuggestions(suggestions.length > 0);
+    } else if (field === 'school') {
+      setShowSchoolSuggestions(false);
+    }
+    // Clear errors when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleLoginInputChange = (field: string, value: string) => {
+    setLoginData(prev => ({ ...prev, [field]: value }));
+    // Clear errors when user starts typing
+    if (loginErrors[field]) {
+      setLoginErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const selectSchool = (school: string) => {
+    setFormData(prev => ({ ...prev, school }));
+    setShowSchoolSuggestions(false);
+    if (errors.school) {
+      setErrors(prev => ({ ...prev, school: '' }));
+    }
+  };
+
+  const canProceed = () => {
+    return formData.name && formData.email && formData.phone && formData.class && formData.school;
+  };
+
+  const canLogin = () => {
+    return loginData.email && loginData.password;
+  };
+
+  const handleLogin = async () => {
+    // Validation logic here
+    if (!canLogin()) return;
+    
+    setIsLoading(true);
+    try {
+      // Simulate login process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // In a real app, this would authenticate with backend
+      loginUser({
+        name: 'Demo User',
+        email: loginData.email,
+        phone: '+1234567890',
+        class: '12',
+        school: 'Demo School',
+        id: Date.now().toString()
+      });
+      
+      setLocation('/dashboard');
+    } catch (error) {
+      setLoginErrors({ general: 'Login failed. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Sample data
   const appStats = [
@@ -606,7 +686,7 @@ export default function Welcome() {
     { name: "Chemistry", icon: FlaskConical, topics: 110, color: "text-green-500" },
     { name: "Biology", icon: Dna, topics: 90, color: "text-red-500" },
     { name: "English", icon: BookOpen, topics: 80, color: "text-yellow-500" },
-    { name: "History", icon: Clock, topics: 70, color: "text-amber-500" },
+    { name: "History", icon: BookOpen, topics: 70, color: "text-amber-500" },
     { name: "Geography", icon: Globe, topics: 65, color: "text-cyan-500" },
     { name: "Computer Science", icon: Code, topics: 100, color: "text-indigo-500" }
   ];
@@ -806,21 +886,6 @@ export default function Welcome() {
     return !newErrors[field];
   };
 
-  const canProceed = () => {
-    return formData.name.trim() && 
-           formData.email.trim() && 
-           formData.phone.trim() && 
-           formData.class.trim() && 
-           formData.school.trim() &&
-           Object.keys(errors).length === 0;
-  };
-
-  const canLogin = () => {
-    return loginData.email.trim() && 
-           loginData.password.trim() &&
-           Object.keys(loginErrors).length === 0;
-  };
-
   const canUpdateProfile = () => {
     return profileFormData.name.trim() &&
            profileFormData.email.trim() &&
@@ -830,7 +895,7 @@ export default function Welcome() {
            Object.keys(profileFormErrors).length === 0;
   };
 
-  const handleLogin = async () => {
+  const handleLoginForProfile = async () => {
     if (!canLogin()) return;
 
     setIsLoading(true);
@@ -1020,7 +1085,7 @@ export default function Welcome() {
                       setProfileFormData(prev => ({ ...prev, school: e.target.value }));
                       validateProfileField('school', e.target.value);
                       if (e.target.value.length > 2) {
-                        searchSchools(e.target.value).then(setSchoolSuggestions);
+                        setSchoolSuggestions(searchSchools(e.target.value));
                         setShowSchoolSuggestions(true);
                       } else {
                         setShowSchoolSuggestions(false);
@@ -1223,7 +1288,7 @@ export default function Welcome() {
 
   // Loading Screen
   if (currentSection === 'loading') {
-    const loadingStages = currentSection === 'login' ? [
+    const loadingStages = profile.isAuthenticated ? [
       'Verifying credentials...',
       'Loading your profile...',
       'Preparing your dashboard...',
