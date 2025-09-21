@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Flame, Medal, Brain, TrendingUp, Calendar, Clock, MessageCircle, BarChart3, Atom } from "lucide-react";
 import { useLocation } from "wouter";
+import { useUserProfile } from "@/hooks/use-app-storage";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
