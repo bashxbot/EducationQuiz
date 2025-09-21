@@ -302,7 +302,7 @@ const ParticleField = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-none opacity-30"
+      className="absolute inset-0 pointer-events-none"
       style={{ zIndex: 1 }}
     />
   );
@@ -450,7 +450,7 @@ const classes = [
 ];
 
 export default function Welcome() {
-  const { profile, updateProfile, loginUser } = useUserProfile();
+  const { profile, updateProfile, loginUser, logoutUser } = useUserProfile();
   const [, setLocation] = useLocation();
   const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading' | 'profile'>('landing');
   const [isLoading, setIsLoading] = useState(false);
@@ -482,19 +482,7 @@ export default function Welcome() {
     school: profile?.school || '',
   });
 
-  // Handler functions
-  const logoutUser = () => {
-    updateProfile({
-      isAuthenticated: false,
-      name: '',
-      email: '',
-      phone: '',
-      class: '',
-      school: '',
-      totalPoints: 0,
-      currentStreak: 0
-    });
-  };
+  // Handler functions - logoutUser is now from the hook
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -538,12 +526,12 @@ export default function Welcome() {
   const handleLogin = async () => {
     // Validation logic here
     if (!canLogin()) return;
-    
+
     setIsLoading(true);
     try {
       // Simulate login process
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // In a real app, this would authenticate with backend
       loginUser({
         name: 'Demo User',
@@ -553,7 +541,7 @@ export default function Welcome() {
         school: 'Demo School',
         id: Date.now().toString()
       });
-      
+
       setLocation('/dashboard');
     } catch (error) {
       setLoginErrors({ general: 'Login failed. Please try again.' });

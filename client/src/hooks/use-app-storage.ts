@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "./use-local-storage";
 import { z } from "zod";
@@ -187,12 +186,12 @@ export function useUserProfile() {
   const updateProfile = (updates: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => {
     setProfile(prev => {
       const newProfile = typeof updates === 'function' ? updates(prev) : { ...prev, ...updates };
-      
+
       // Trigger a custom event to notify other components
       window.dispatchEvent(new CustomEvent('profileUpdated', { 
         detail: newProfile 
       }));
-      
+
       return newProfile;
     });
   };
@@ -205,7 +204,19 @@ export function useUserProfile() {
     });
   };
 
-  return { profile, updateProfile, setProfile, loginUser };
+  const logoutUser = () => {
+    setProfile(null);
+    // Clear any other stored data
+    localStorage.removeItem('chat_messages'); // Assuming this key might be used elsewhere for chat history
+    localStorage.removeItem('quiz_progress'); // Assuming this key might be used elsewhere for quiz progress
+    localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY); // Explicitly clear chat history
+    localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS); // Explicitly clear quiz progress
+    // Force redirect to welcome page
+    window.location.href = '/';
+  };
+
+
+  return { profile, updateProfile, setProfile, loginUser, logoutUser };
 }
 
 export function useChatHistory() {
@@ -402,12 +413,12 @@ export function isValidEmail(email: string): boolean {
 export function isValidPhone(phone: string): boolean {
   // Remove all non-digits
   const cleanPhone = phone.replace(/\D/g, '');
-  
+
   // Check if it's a valid length (10-15 digits is common for most countries)
   if (cleanPhone.length < 10 || cleanPhone.length > 15) {
     return false;
   }
-  
+
   // Basic pattern matching for common formats
   const phonePattern = /^[\+]?[1-9][\d]{0,3}[\s\-]?[\(]?[\d]{3}[\)]?[\s\-]?\d{3}[\s\-]?\d{4}$/;
   return phonePattern.test(phone) || /^\d{10}$/.test(cleanPhone);
@@ -425,13 +436,13 @@ export function detectFakeEmail(email: string): boolean {
     /123@123\.com/i,
     /abc@abc\.com/i,
   ];
-  
+
   return suspiciousPatterns.some(pattern => pattern.test(email));
 }
 
 export function detectFakePhone(phone: string): boolean {
   const cleanPhone = phone.replace(/\D/g, '');
-  
+
   // Check for obvious fake patterns
   const fakePatterns = [
     /^1{10,}$/, // All 1s
@@ -440,6 +451,6 @@ export function detectFakePhone(phone: string): boolean {
     /^987654321[0-9]?$/, // Reverse sequential
     /^(\d)\1{9,}$/, // Repeated digits
   ];
-  
+
   return fakePatterns.some(pattern => pattern.test(cleanPhone));
 }

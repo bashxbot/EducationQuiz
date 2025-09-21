@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,16 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Calendar, 
-  Trophy, 
-  Medal, 
-  History, 
-  PieChart, 
-  Settings, 
-  Bell, 
-  UserPen, 
-  Download, 
+import {
+  Calendar,
+  Trophy,
+  Medal,
+  History,
+  PieChart,
+  Settings,
+  Bell,
+  UserPen,
+  Download,
   LogOut,
   Edit3,
   Save,
@@ -34,7 +34,7 @@ import {
   XCircle,
   Zap
 } from "lucide-react";
-import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData } from "@/hooks/use-app-storage";
+import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData, useAuth } from "@/hooks/use-app-storage";
 import { useBadges, useAutoAchievements } from "@/hooks/use-badges";
 import { useTheme } from "@/lib/theme";
 
@@ -44,6 +44,7 @@ export default function Profile() {
   const { progress: reasoningProgress } = useReasoningProgress();
   const { badges, getAllBadgeDefinitions } = useBadges();
   const { theme, setTheme } = useTheme();
+  const { logoutUser } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
@@ -77,7 +78,7 @@ export default function Profile() {
 
   // Calculate stats with safe defaults
   const totalQuizzes = quizHistory?.length || 0;
-  const averageScore = totalQuizzes > 0 
+  const averageScore = totalQuizzes > 0
     ? Math.round(quizHistory.reduce((sum: number, quiz: any) => sum + (quiz.score || 0), 0) / totalQuizzes)
     : 0;
   const totalReasoningChallenges = reasoningProgress?.totalSolved || 0;
@@ -89,11 +90,14 @@ export default function Profile() {
 
     // Also send to server to update globally
     try {
-      await fetch('/api/user/profile', {
+      const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editedProfile)
       });
+      if (!response.ok) {
+        console.error('Error updating profile globally:', await response.text());
+      }
     } catch (error) {
       console.error('Error updating profile globally:', error);
     }
@@ -108,8 +112,8 @@ export default function Profile() {
 
   const handleResetData = () => {
     resetAppData();
+    // Resetting profile to a default state after reset
     setEditedProfile({
-      ...profile,
       name: "Anonymous User",
       email: "",
       class: "",
@@ -117,7 +121,18 @@ export default function Profile() {
       totalPoints: 0,
       currentStreak: 0
     });
+    // Ensure the globally stored profile is also updated if necessary, or rely on subsequent fetches.
+    updateProfile({
+      name: "Anonymous User",
+      email: "",
+      class: "",
+      school: "",
+      totalPoints: 0,
+      currentStreak: 0,
+      isAuthenticated: true // Assuming reset shouldn't log out
+    });
   };
+
 
   const exportData = () => {
     const data = {
@@ -295,8 +310,8 @@ export default function Profile() {
               <span className="text-primary">{badgeStats.progress}%</span>
             </div>
             <div className="w-full bg-surface rounded-full h-3 border border-primary/20">
-              <div 
-                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-lg" 
+              <div
+                className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500 shadow-lg"
                 style={{ width: `${badgeStats.progress}%` }}
               ></div>
             </div>
@@ -306,8 +321,8 @@ export default function Profile() {
             {allBadgeDefinitions.map((badge: any, index: number) => (
               <div key={`badge-${badge.id}-${index}`} className="text-center">
                 <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-xl transition-all duration-300 ${
-                  earnedBadgeIds.has(badge.id) 
-                    ? 'bg-gradient-to-br from-primary to-accent text-white shadow-lg' 
+                  earnedBadgeIds.has(badge.id)
+                    ? 'bg-gradient-to-br from-primary to-accent text-white shadow-lg'
                     : 'bg-muted text-muted-foreground border border-border'
                 }`}>
                   {badge.id === 'scholar' && <BookOpen className="h-6 w-6" />}
@@ -363,16 +378,16 @@ export default function Profile() {
             <div>
               <label className="text-sm font-medium mb-2 block font-body">Theme</label>
               <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={theme === 'dark' ? 'default' : 'outline'} 
+                <Button
+                  variant={theme === 'dark' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTheme('dark')}
                   className="w-full"
                 >
                   Dark Mode
                 </Button>
-                <Button 
-                  variant={theme === 'system' ? 'default' : 'outline'} 
+                <Button
+                  variant={theme === 'system' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTheme('system')}
                   className="w-full"
@@ -388,9 +403,9 @@ export default function Profile() {
                 Data Management
               </h3>
               <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  onClick={exportData} 
+                <Button
+                  variant="outline"
+                  onClick={exportData}
                   className="w-full justify-start border-primary/30 hover:border-primary"
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -399,8 +414,8 @@ export default function Profile() {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
@@ -416,8 +431,8 @@ export default function Profile() {
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex gap-2">
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleResetData} 
+                      <AlertDialogAction
+                        onClick={handleResetData}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
                       >
                         Reset Data
@@ -436,8 +451,8 @@ export default function Profile() {
               <div className="space-y-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
@@ -453,11 +468,8 @@ export default function Profile() {
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex gap-2">
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => {
-                          updateProfile({ isAuthenticated: false });
-                          window.location.reload();
-                        }}
+                      <AlertDialogAction
+                        onClick={logoutUser}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
                       >
                         Logout

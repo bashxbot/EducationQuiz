@@ -153,6 +153,10 @@ export default function Chat() {
         body: JSON.stringify(requestBody),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       if (!response.body) {
         throw new Error('No response body');
       }
@@ -170,16 +174,23 @@ export default function Chat() {
 
       setStreamingMessage(streamingMsg);
 
+      let buffer = '';
+      
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
+          if (line.trim() === '') continue;
+          
           if (line.startsWith('data: ')) {
-            const data = line.slice(6);
+            const data = line.slice(6).trim();
             if (data === '[DONE]') {
               // Finalize the message
               setStreamingMessage(prev => {
@@ -206,11 +217,40 @@ export default function Chat() {
                 throw new Error(parsed.error);
               }
             } catch (parseError) {
-              console.error('Parse error:', parseError);
+              // If JSON parsing fails, treat the data as plain text
+              if (data && data !== '[DONE]') {
+                setStreamingMessage(prev => 
+                  prev ? { ...prev, content: prev.content + data } : null
+                );
+              }
             }
+          } else if (line.trim() && !line.startsWith('data:')) {
+            // Handle plain text streaming
+            setStreamingMessage(prev => 
+              prev ? { ...prev, content: prev.content + line } : null
+            );
           }
         }
       }
+
+      // Handle any remaining buffer content
+      if (buffer.trim()) {
+        setStreamingMessage(prev => 
+          prev ? { ...prev, content: prev.content + buffer.trim() } : null
+        );
+      }
+
+      // Finalize if we reach here without [DONE]
+      setStreamingMessage(prev => {
+        if (prev) {
+          addMessage({
+            role: 'assistant',
+            content: prev.content,
+          });
+        }
+        return null;
+      });
+      setIsLoading(false);
     } catch (error) {
       console.error('Chat error:', error);
       addMessage({
