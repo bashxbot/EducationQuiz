@@ -34,7 +34,7 @@ import {
   XCircle,
   Zap
 } from "lucide-react";
-import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData, useAuth } from "@/hooks/use-app-storage";
+import { useUserProfile, useQuizHistory, useReasoningProgress, resetAppData } from "@/hooks/use-app-storage";
 import { useBadges, useAutoAchievements } from "@/hooks/use-badges";
 import { useTheme } from "@/lib/theme";
 
@@ -44,7 +44,19 @@ export default function Profile() {
   const { progress: reasoningProgress } = useReasoningProgress();
   const { badges, getAllBadgeDefinitions } = useBadges();
   const { theme, setTheme } = useTheme();
-  const { logoutUser } = useAuth();
+
+  const logoutUser = () => {
+    updateProfile({
+      isAuthenticated: false,
+      name: '',
+      email: '',
+      phone: '',
+      class: '',
+      school: '',
+      totalPoints: 0,
+      currentStreak: 0
+    });
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
@@ -114,21 +126,28 @@ export default function Profile() {
     resetAppData();
     // Resetting profile to a default state after reset
     setEditedProfile({
+      id: profile?.id || 'anonymous',
       name: "Anonymous User",
       email: "",
-      class: "",
-      school: "",
-      totalPoints: 0,
-      currentStreak: 0
-    });
-    // Ensure the globally stored profile is also updated if necessary, or rely on subsequent fetches.
-    updateProfile({
-      name: "Anonymous User",
-      email: "",
+      phone: "",
       class: "",
       school: "",
       totalPoints: 0,
       currentStreak: 0,
+      joinDate: profile?.joinDate || new Date().toISOString(),
+      isAuthenticated: true
+    });
+    // Ensure the globally stored profile is also updated if necessary, or rely on subsequent fetches.
+    updateProfile({
+      id: profile?.id || 'anonymous',
+      name: "Anonymous User",
+      email: "",
+      phone: "",
+      class: "",
+      school: "",
+      totalPoints: 0,
+      currentStreak: 0,
+      joinDate: profile?.joinDate || new Date().toISOString(),
       isAuthenticated: true // Assuming reset shouldn't log out
     });
   };
