@@ -197,7 +197,15 @@ export function useUserProfile() {
     });
   };
 
-  return { profile, updateProfile, setProfile };
+  const loginUser = (userDetails: Partial<UserProfile>) => {
+    updateProfile({
+      ...userDetails,
+      isAuthenticated: true,
+      joinDate: profile.joinDate || new Date().toISOString()
+    });
+  };
+
+  return { profile, updateProfile, setProfile, loginUser };
 }
 
 export function useChatHistory() {

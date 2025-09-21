@@ -291,51 +291,57 @@ export default function Leaderboard() {
         entry.id === 'demo-user' ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-card border-border'
       }`}
     >
-      <div className="flex items-center gap-4 flex-1">
+      {/* Left side - Rank and Avatar */}
+      <div className="flex items-center gap-3 flex-shrink-0">
         {showRank && (
-          <div className="w-10 flex justify-center flex-shrink-0">
+          <div className="w-8 flex justify-center">
             {getRankIcon(entry.rank)}
           </div>
         )}
-        <Avatar className="w-10 h-10 border-2 border-border flex-shrink-0">
+        <Avatar className="w-10 h-10 border-2 border-border">
           <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-semibold">
             {entry.name.charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-medium text-foreground truncate">{entry.name}</h3>
-            {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
-          </div>
-          <p className="text-xs text-muted-foreground truncate">{entry.class} • {entry.school}</p>
+      </div>
+
+      {/* Middle - Name and School (grows to fill space) */}
+      <div className="flex-1 min-w-0 px-3">
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="text-sm font-medium text-foreground truncate">{entry.name}</h3>
+          {entry.id === 'demo-user' && <Badge variant="secondary" className="text-xs">You</Badge>}
         </div>
+        <p className="text-xs text-muted-foreground truncate">{entry.class} • {entry.school}</p>
       </div>
       
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="text-right">
-          <div className="flex items-center gap-1 mb-1 justify-end">
-            <Trophy className="h-3 w-3 text-yellow-500" />
-            <span className="font-bold text-foreground text-sm">{entry.totalPoints.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground justify-end">
-            <span className="flex items-center gap-1">
-              <Target className="h-3 w-3" />
-              {entry.accuracy}%
-            </span>
-            <span className="flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              {entry.streak}
-            </span>
-          </div>
+      {/* Right side - Stats and Actions in vertical layout */}
+      <div className="flex flex-col items-end gap-2 flex-shrink-0 min-w-0">
+        {/* Points */}
+        <div className="flex items-center gap-1">
+          <Trophy className="h-3 w-3 text-yellow-500 flex-shrink-0" />
+          <span className="font-bold text-foreground text-sm whitespace-nowrap">{entry.totalPoints.toLocaleString()}</span>
         </div>
         
-        <div className="flex flex-col items-center gap-1">
+        {/* Accuracy and Streak */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <Target className="h-3 w-3 flex-shrink-0" />
+            {entry.accuracy}%
+          </span>
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <Zap className="h-3 w-3 flex-shrink-0" />
+            {entry.streak}
+          </span>
+        </div>
+        
+        {/* Rank Change and Profile Button */}
+        <div className="flex items-center gap-2">
           <div className="text-xs">{getRankChangeIcon(entry.change)}</div>
           {entry.id !== 'demo-user' && (
             <Button 
               size="sm" 
               variant="ghost" 
-              className="h-6 w-6 p-0 hover:bg-primary/10"
+              className="h-6 w-6 p-0 hover:bg-primary/10 flex-shrink-0"
               onClick={() => setSelectedProfile(entry)}
             >
               <User className="h-3 w-3" />

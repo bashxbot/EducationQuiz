@@ -427,6 +427,46 @@ export default function Profile() {
                 </AlertDialog>
               </div>
             </div>
+
+            <div className="border-t border-primary/20 pt-4">
+              <h3 className="font-medium mb-3 flex items-center gap-2 text-primary font-heading">
+                <LogOut className="h-4 w-4" />
+                Account
+              </h3>
+              <div className="space-y-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-destructive border-destructive/30 hover:border-destructive"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="premium-card border-destructive/30 max-w-md">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive font-heading">Logout Confirmation</AlertDialogTitle>
+                      <AlertDialogDescription className="font-body">
+                        Are you sure you want to logout? You'll need to login again to access your account.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex gap-2">
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          updateProfile({ isAuthenticated: false });
+                          window.location.reload();
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                      >
+                        Logout
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

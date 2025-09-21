@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -116,6 +115,7 @@ import {
   FlaskConical
 } from 'lucide-react';
 import { useUserProfile, isValidEmail, isValidPhone, detectFakeEmail, detectFakePhone } from '@/hooks/use-app-storage';
+import { useNavigate } from 'react-router-dom';
 
 // Advanced Loading Components
 const LoadingSpinner = () => (
@@ -188,7 +188,7 @@ const AdvancedTypingText = ({
 
   useEffect(() => {
     const currentText = texts[currentIndex];
-    
+
     const timeout = setTimeout(() => {
       if (!isDeleting) {
         if (displayedText.length < currentText.length) {
@@ -358,7 +358,7 @@ const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }: {
       if (!startTime) startTime = currentTime;
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       setCount(Math.floor(startCount + (end - startCount) * progress));
 
       if (progress < 1) {
@@ -429,9 +429,9 @@ const searchSchools = async (query: string): Promise<string[]> => {
     'Sancta Maria International School, Hyderabad',
     'Emerald Heights School, Indore'
   ];
-  
+
   if (!query) return schools.slice(0, 15);
-  
+
   return schools.filter(school => 
     school.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 15);
@@ -456,8 +456,9 @@ const classes = [
 ];
 
 export default function Welcome() {
-  const { profile, updateProfile } = useUserProfile();
-  const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading'>('landing');
+  const { profile, updateProfile, loginUser, logoutUser } = useUserProfile();
+  const navigate = useNavigate();
+  const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading' | 'profile'>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [formData, setFormData] = useState({
@@ -478,6 +479,14 @@ export default function Welcome() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [activeFeature, setActiveFeature] = useState(0);
+  const [profileFormErrors, setProfileFormErrors] = useState<Record<string, string>>({});
+  const [profileFormData, setProfileFormData] = useState({
+    name: profile?.name || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    class: profile?.class || '',
+    school: profile?.school || '',
+  });
 
   // Sample data
   const appStats = [
@@ -628,7 +637,7 @@ export default function Welcome() {
   const simulateLoading = async () => {
     setIsLoading(true);
     setCurrentSection('loading');
-    
+
     const stages = [
       'Initializing AI Engine...',
       'Loading Learning Algorithms...',
@@ -658,22 +667,21 @@ export default function Welcome() {
         }
       ]));
 
-      updateProfile({
-        id: 'user-' + Date.now(),
+      // Use loginUser to properly authenticate
+      loginUser({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         class: formData.class,
         school: formData.school,
-        totalPoints: 0,
-        currentStreak: 0,
-        joinDate: new Date().toISOString(),
-        isAuthenticated: true
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
       });
+
+      navigate('/dashboard');
     } catch (error) {
       console.error('Setup error:', error);
-    } finally {
       setIsLoading(false);
+      setCurrentSection('signup'); // Go back to signup if error
     }
   };
 
@@ -768,31 +776,40 @@ export default function Welcome() {
     setLoginErrors(newErrors);
     return !newErrors[field];
   };
-
-  const handleInputChange = async (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    validateField(field, value);
-
-    if (field === 'school') {
-      if (value.length > 2) {
-        const schools = await searchSchools(value);
-        setSchoolSuggestions(schools);
-        setShowSchoolSuggestions(true);
-      } else {
-        setShowSchoolSuggestions(false);
-      }
+  
+  const validateProfileField = (field: string, value: string) => {
+    const newErrors = { ...profileFormErrors };
+    switch (field) {
+      case 'name':
+        if (!value.trim()) newErrors.name = 'Name is required';
+        else if (value.trim().length < 2) newErrors.name = 'Name must be at least 2 characters';
+        else if (!/^[a-zA-Z\s]+$/.test(value.trim())) newErrors.name = 'Name can only contain letters and spaces';
+        else delete newErrors.name;
+        break;
+      case 'email':
+        if (!value.trim()) newErrors.email = 'Email is required';
+        else if (!isValidEmail(value)) newErrors.email = 'Please enter a valid email address';
+        else if (detectFakeEmail(value)) newErrors.email = 'Please use a real email address';
+        else delete newErrors.email;
+        break;
+      case 'phone':
+        if (!value.trim()) newErrors.phone = 'Phone number is required';
+        else if (!isValidPhone(value)) newErrors.phone = 'Please enter a valid phone number';
+        else if (detectFakePhone(value)) newErrors.phone = 'Please use a real phone number';
+        else delete newErrors.phone;
+        break;
+      case 'class':
+        if (!value.trim()) newErrors.class = 'Class/Grade is required';
+        else delete newErrors.class;
+        break;
+      case 'school':
+        if (!value.trim()) newErrors.school = 'School/Institution is required';
+        else if (value.trim().length < 3) newErrors.school = 'School name must be at least 3 characters';
+        else delete newErrors.school;
+        break;
     }
-  };
-
-  const selectSchool = (school: string) => {
-    setFormData(prev => ({ ...prev, school }));
-    setShowSchoolSuggestions(false);
-    validateField('school', school);
-  };
-
-  const handleLoginInputChange = (field: string, value: string) => {
-    setLoginData(prev => ({ ...prev, [field]: value }));
-    validateLoginField(field, value);
+    setProfileFormErrors(newErrors);
+    return !newErrors[field];
   };
 
   const canProceed = () => {
@@ -808,6 +825,15 @@ export default function Welcome() {
     return loginData.email.trim() && 
            loginData.password.trim() &&
            Object.keys(loginErrors).length === 0;
+  };
+  
+  const canUpdateProfile = () => {
+    return profileFormData.name.trim() &&
+           profileFormData.email.trim() &&
+           profileFormData.phone.trim() &&
+           profileFormData.class.trim() &&
+           profileFormData.school.trim() &&
+           Object.keys(profileFormErrors).length === 0;
   };
 
   const handleLogin = async () => {
@@ -834,37 +860,240 @@ export default function Welcome() {
       // For demo purposes, we'll simulate successful login
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      updateProfile({
-        id: 'user-' + Date.now(),
-        name: 'Returning User',
-        email: loginData.email,
-        phone: '+1234567890',
-        class: 'Class 10',
-        school: 'Excellence High School',
-        totalPoints: 1250,
-        currentStreak: 5,
-        joinDate: new Date().toISOString(),
-        isAuthenticated: true
-      });
+      // Simulate fetching user data
+      const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const user = storedUsers.find((u: any) => u.email === loginData.email && u.password === loginData.password);
+
+      if (user) {
+        updateProfile({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          class: user.class,
+          school: user.school,
+          totalPoints: user.totalPoints || 0,
+          currentStreak: user.currentStreak || 0,
+          joinDate: user.joinDate || new Date().toISOString(),
+          isAuthenticated: true
+        });
+        navigate('/dashboard');
+      } else {
+        setLoginErrors({ general: 'Invalid email or password. Please try again.' });
+        setIsLoading(false);
+        setCurrentSection('login');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setLoginErrors({ general: 'Login failed. Please check your credentials.' });
-      setCurrentSection('login');
-    } finally {
+      setLoginErrors({ general: 'An unexpected error occurred during login.' });
       setIsLoading(false);
+      setCurrentSection('login');
     }
   };
 
   if (profile?.isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
+        <ParticleField />
+        <div className="relative z-10 max-w-4xl mx-auto py-8">
+          <Card className="premium-card">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="space-y-2">
+                <CardTitle className="text-3xl text-gradient-primary">Profile Settings</CardTitle>
+                <p className="text-muted-foreground">Manage your account and preferences</p>
+              </div>
+              <Button variant="destructive" onClick={logoutUser} className="h-12 px-6">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              {/* Profile Form Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Name Field */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Full Name
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={profileFormData.name}
+                    onChange={(e) => {
+                      setProfileFormData(prev => ({ ...prev, name: e.target.value }));
+                      validateProfileField('name', e.target.value);
+                    }}
+                    className={`premium-input ${profileFormErrors.name ? 'border-destructive' : ''}`}
+                  />
+                  {profileFormErrors.name && (
+                    <div className="flex items-center gap-2 text-xs text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      {profileFormErrors.name}
+                    </div>
+                  )}
+                </div>
+
+                {/* Email Field */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="your.email@school.edu"
+                    value={profileFormData.email}
+                    onChange={(e) => {
+                      setProfileFormData(prev => ({ ...prev, email: e.target.value }));
+                      validateProfileField('email', e.target.value);
+                    }}
+                    className={`premium-input ${profileFormErrors.email ? 'border-destructive' : ''}`}
+                    disabled // Email might be read-only
+                  />
+                  {profileFormErrors.email && (
+                    <div className="flex items-center gap-2 text-xs text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      {profileFormErrors.email}
+                    </div>
+                  )}
+                </div>
+
+                {/* Phone Field */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Phone Number
+                  </label>
+                  <Input
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={profileFormData.phone}
+                    onChange={(e) => {
+                      setProfileFormData(prev => ({ ...prev, phone: e.target.value }));
+                      validateProfileField('phone', e.target.value);
+                    }}
+                    className={`premium-input ${profileFormErrors.phone ? 'border-destructive' : ''}`}
+                  />
+                  {profileFormErrors.phone && (
+                    <div className="flex items-center gap-2 text-xs text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      {profileFormErrors.phone}
+                    </div>
+                  )}
+                </div>
+
+                {/* Class Field */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Class/Grade
+                  </label>
+                  <Select value={profileFormData.class} onValueChange={(value) => {
+                    setProfileFormData(prev => ({ ...prev, class: value }));
+                    validateProfileField('class', value);
+                  }}>
+                    <SelectTrigger className={`premium-input ${profileFormErrors.class ? 'border-destructive' : ''}`}>
+                      <SelectValue placeholder="Select your class/grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map(cls => (
+                        <SelectItem key={cls.value} value={cls.value}>{cls.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {profileFormErrors.class && (
+                    <div className="flex items-center gap-2 text-xs text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      {profileFormErrors.class}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* School Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <School className="h-4 w-4" />
+                  School/Institution
+                </label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Start typing your school name..."
+                    value={profileFormData.school}
+                    onChange={(e) => {
+                      setProfileFormData(prev => ({ ...prev, school: e.target.value }));
+                      validateProfileField('school', e.target.value);
+                      if (e.target.value.length > 2) {
+                        searchSchools(e.target.value).then(setSchoolSuggestions);
+                        setShowSchoolSuggestions(true);
+                      } else {
+                        setShowSchoolSuggestions(false);
+                      }
+                    }}
+                    className={`premium-input ${profileFormErrors.school ? 'border-destructive' : ''}`}
+                    onFocus={() => profileFormData.school.length > 2 && setShowSchoolSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSchoolSuggestions(false), 100)} // Hide suggestions on blur, with a slight delay
+                  />
+                  {showSchoolSuggestions && schoolSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      {schoolSuggestions.map((school, index) => (
+                        <button
+                          key={index}
+                          className="w-full text-left px-4 py-3 hover:bg-surface transition-colors flex items-center gap-3 border-b border-border last:border-b-0"
+                          onClick={() => {
+                            setProfileFormData(prev => ({ ...prev, school }));
+                            setShowSchoolSuggestions(false);
+                            validateProfileField('school', school);
+                          }}
+                        >
+                          <School className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm">{school}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {profileFormErrors.school && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {profileFormErrors.school}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-4">
+              <Button variant="outline" onClick={() => setCurrentSection('landing')}>Cancel</Button>
+              <Button onClick={async () => {
+                if (canUpdateProfile()) {
+                  await updateProfile({
+                    name: profileFormData.name,
+                    email: profileFormData.email,
+                    phone: profileFormData.phone,
+                    class: profileFormData.class,
+                    school: profileFormData.school
+                  });
+                  // Optionally show a success message
+                  alert('Profile updated successfully!');
+                }
+              }} disabled={!canUpdateProfile()}>
+                Update Profile
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
   }
+
 
   // Login Section
   if (currentSection === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
         <ParticleField />
-        
+
         <div className="relative z-10 max-w-md mx-auto py-8">
           <Card className="premium-card">
             <CardHeader className="text-center space-y-4">
@@ -1016,18 +1245,18 @@ export default function Welcome() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background flex items-center justify-center p-4 relative overflow-hidden">
         <ParticleField />
-        
+
         <div className="relative z-10 text-center space-y-8 max-w-lg mx-auto">
           <div className="space-y-6">
             <div className="relative mx-auto w-32 h-32">
               <LoadingPulse />
             </div>
-            
+
             <div className="space-y-4">
               <h1 className="text-3xl font-bold text-gradient-primary">
                 Setting Up Your Learning Experience
               </h1>
-              
+
               <div className="space-y-2">
                 <p className="text-lg font-medium text-foreground">
                   {loadingStages[loadingStage]}
@@ -1065,7 +1294,7 @@ export default function Welcome() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background relative overflow-hidden">
         <ParticleField />
         <FloatingIcons />
-        
+
         {/* Hero Section */}
         <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -1082,7 +1311,7 @@ export default function Welcome() {
                   <Star className="h-6 w-6 text-pink-400" />
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h1 className="text-5xl md:text-7xl font-bold leading-tight">
                   Welcome to{' '}
@@ -1136,7 +1365,7 @@ export default function Welcome() {
                   <Rocket className="h-5 w-5 ml-2" />
                 </Button>
               </div>
-              
+
               <div className="flex items-center justify-center">
                 <Button 
                   onClick={() => setCurrentSection('login')} 
@@ -1179,7 +1408,7 @@ export default function Welcome() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
         <ParticleField />
-        
+
         <div className="relative z-10 max-w-6xl mx-auto space-y-12 py-8">
           {/* Header */}
           <div className="text-center space-y-4">
@@ -1215,7 +1444,7 @@ export default function Welcome() {
                       <p className="text-muted-foreground">{feature.description}</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     {feature.details.map((detail, detailIndex) => (
                       <div key={detailIndex} className="flex items-center gap-2">
@@ -1280,7 +1509,7 @@ export default function Welcome() {
                   </div>
                 </div>
               </Card>
-              
+
               {/* Testimonial Indicators */}
               <div className="flex justify-center gap-2 mt-4">
                 {testimonials.map((_, index) => (
@@ -1331,7 +1560,7 @@ export default function Welcome() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
         <ParticleField />
-        
+
         <div className="relative z-10 max-w-6xl mx-auto space-y-16 py-8">
           {/* Header */}
           <div className="text-center space-y-6">
@@ -1560,7 +1789,7 @@ export default function Welcome() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
         <ParticleField />
-        
+
         <div className="relative z-10 max-w-2xl mx-auto py-8">
           <Card className="premium-card">
             <CardHeader className="text-center space-y-4">
