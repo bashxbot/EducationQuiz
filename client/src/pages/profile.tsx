@@ -46,16 +46,23 @@ export default function Profile() {
   const { theme, setTheme } = useTheme();
 
   const logoutUser = () => {
+    // Reset to a valid default profile structure
     updateProfile({
-      isAuthenticated: false,
+      id: 'guest',
       name: '',
-      email: '',
+      email: 'guest@example.com',
       phone: '',
       class: '',
       school: '',
       totalPoints: 0,
-      currentStreak: 0
+      currentStreak: 0,
+      joinDate: new Date().toISOString(),
+      isAuthenticated: false
     });
+    // Clear localStorage completely for a clean logout
+    localStorage.clear();
+    // Redirect to welcome page
+    window.location.href = '/';
   };
 
   const [isEditing, setIsEditing] = useState(false);
