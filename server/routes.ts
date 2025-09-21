@@ -74,6 +74,46 @@ router.put('/api/user/profile', async (req, res) => {
   }
 });
 
+// Badges routes
+router.get('/api/badges', async (req, res) => {
+  try {
+    // Return demo badges data
+    const badges = [
+      {
+        id: 'first-quiz',
+        name: 'First Quiz',
+        description: 'Complete your first quiz',
+        icon: 'Trophy',
+        color: 'from-yellow-400 to-yellow-600',
+        unlocked: true,
+        unlockedAt: new Date().toISOString()
+      },
+      {
+        id: 'streak-master',
+        name: 'Streak Master',
+        description: 'Maintain a 7-day streak',
+        icon: 'Flame',
+        color: 'from-orange-400 to-red-500',
+        unlocked: true,
+        unlockedAt: new Date().toISOString()
+      },
+      {
+        id: 'scholar',
+        name: 'Scholar',
+        description: 'Complete 10 quizzes',
+        icon: 'Star',
+        color: 'from-blue-400 to-blue-600',
+        unlocked: false
+      }
+    ];
+    
+    res.json(badges);
+  } catch (error) {
+    console.error('Error fetching badges:', error);
+    res.status(500).json({ error: 'Failed to fetch badges' });
+  }
+});
+
 // Progress routes
 router.get('/api/progress', async (req, res) => {
   try {

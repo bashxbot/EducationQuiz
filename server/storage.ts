@@ -81,7 +81,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatMessages.userId, userId))
       .orderBy(desc(chatMessages.timestamp))
       .limit(limit);
-    
+
     return messages.reverse();
   }
 

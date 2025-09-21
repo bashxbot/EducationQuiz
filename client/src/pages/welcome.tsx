@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import {
   Brain, 
   Trophy, 
   Users, 
-  ChevronRight, 
+  ArrowRight, 
   CheckCircle,
   AlertTriangle,
   School,
@@ -18,18 +18,8 @@ import {
   Mail,
   User,
   BookOpen,
-  Zap,
-  Star,
-  ArrowRight,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  ChevronDown,
-  Target,
-  TrendingUp,
-  Shield,
-  Clock,
+  Lock,
+  LogOut,
   Lightbulb,
   Award,
   Globe,
@@ -112,10 +102,15 @@ import {
   Telescope,
   Atom,
   Dna,
-  FlaskConical
+  FlaskConical,
+  Star,
+  ChevronDown,
+  Target,
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 import { useUserProfile, isValidEmail, isValidPhone, detectFakeEmail, detectFakePhone } from '@/hooks/use-app-storage';
-import { useNavigate } from 'react-router-dom';
+import { setLocation } from 'wouter/use-location';
 
 // Advanced Loading Components
 const LoadingSpinner = () => (
@@ -457,7 +452,6 @@ const classes = [
 
 export default function Welcome() {
   const { profile, updateProfile, loginUser, logoutUser } = useUserProfile();
-  const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading' | 'profile'>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
@@ -677,7 +671,7 @@ export default function Welcome() {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
       });
 
-      navigate('/dashboard');
+      setLocation('/dashboard');
     } catch (error) {
       console.error('Setup error:', error);
       setIsLoading(false);
@@ -776,7 +770,7 @@ export default function Welcome() {
     setLoginErrors(newErrors);
     return !newErrors[field];
   };
-  
+
   const validateProfileField = (field: string, value: string) => {
     const newErrors = { ...profileFormErrors };
     switch (field) {
@@ -826,7 +820,7 @@ export default function Welcome() {
            loginData.password.trim() &&
            Object.keys(loginErrors).length === 0;
   };
-  
+
   const canUpdateProfile = () => {
     return profileFormData.name.trim() &&
            profileFormData.email.trim() &&
@@ -877,7 +871,7 @@ export default function Welcome() {
           joinDate: user.joinDate || new Date().toISOString(),
           isAuthenticated: true
         });
-        navigate('/dashboard');
+        setLocation('/dashboard');
       } else {
         setLoginErrors({ general: 'Invalid email or password. Please try again.' });
         setIsLoading(false);
