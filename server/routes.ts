@@ -315,13 +315,13 @@ router.post('/api/quiz/:id/submit', async (req, res) => {
 // Chat routes
 router.post('/api/chat/stream', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { content, image, mimeType } = req.body;
     
     // Store user message
     await storage.addChatMessage({
       userId: 'demo-user',
       role: 'user',
-      content: message
+      content: content
     });
 
     res.setHeader('Content-Type', 'text/plain');
@@ -330,10 +330,15 @@ router.post('/api/chat/stream', async (req, res) => {
 
     let response;
     try {
-      response = await generateChat(message);
+      const imageData = image ? { base64: image, mimeType: mimeType || 'image/jpeg' } : undefined;
+      response = await generateChat(content, imageData);
     } catch (aiError) {
       console.error('AI chat generation failed, using fallback:', aiError);
-      response = `I understand you're asking about "${message}". While I'm having some technical difficulties right now, I'd be happy to help you learn more about this topic. Could you provide more specific details about what you'd like to know?`;
+      if (image) {
+        response = `I can see you've uploaded an image, but I'm having trouble analyzing it right now. Please try again or describe what you'd like to know about the image.`;
+      } else {
+        response = `I understand you're asking about "${content}". While I'm having some technical difficulties right now, I'd be happy to help you learn more about this topic. Could you provide more specific details about what you'd like to know?`;
+      }
     }
     
     // Store assistant response

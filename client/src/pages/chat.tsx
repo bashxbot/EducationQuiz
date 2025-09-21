@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Send, Copy, Check, MoreVertical, Trash2, MessageCircle, Sparkles } from 'lucide-react';
+import { Send, Copy, Check, MoreVertical, Trash2, MessageCircle, Sparkles, ImagePlus, X } from 'lucide-react';
 import { useChatHistory } from '../hooks/use-app-storage';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -47,8 +47,11 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<StreamingMessage | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,28 +71,86 @@ export default function Chat() {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix (data:image/...;base64,)
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent, questionText?: string) => {
     e.preventDefault();
     const userMessage = questionText || input.trim();
-    if (!userMessage || isLoading) return;
+    if ((!userMessage && !selectedImage) || isLoading) return;
 
     setInput('');
     setIsLoading(true);
 
+    // Prepare message content
+    let messageContent = userMessage;
+    let imageData = null;
+
+    if (selectedImage) {
+      try {
+        imageData = await convertImageToBase64(selectedImage);
+        messageContent = userMessage || "Please analyze this image and explain what you see.";
+      } catch (error) {
+        console.error('Error converting image:', error);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // Add user message
     addMessage({
       role: 'user',
-      content: userMessage,
+      content: messageContent,
     });
+
+    // Clear image after adding to message
+    removeImage();
 
     try {
       // Start streaming response
+      const requestBody: any = { content: messageContent };
+      if (imageData) {
+        requestBody.image = imageData;
+        requestBody.mimeType = selectedImage?.type || 'image/jpeg';
+      }
+
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: userMessage }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.body) {
@@ -172,6 +233,8 @@ export default function Chat() {
       handleSubmit(e as any);
     }
   };
+
+  const canSubmit = (input.trim() || selectedImage) && !isLoading;
 
   const allMessages = [...messages, ...(streamingMessage ? [streamingMessage] : [])];
 
@@ -321,19 +384,60 @@ export default function Chat() {
 
           {/* Input Section */}
           <div className="border-t border-border p-4">
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="mb-3 relative inline-block">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="max-w-32 max-h-32 rounded-lg border border-border object-cover"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 bg-background"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="flex gap-3">
-              <Input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about your studies..."
-                disabled={isLoading}
-                className="flex-1 bg-background border-border focus:border-primary"
-              />
+              <div className="flex-1 flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={selectedImage ? "Ask me about this image..." : "Ask me anything about your studies..."}
+                  disabled={isLoading}
+                  className="flex-1 bg-background border-border focus:border-primary"
+                />
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="px-3"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </Button>
+              </div>
+              
               <Button 
                 type="submit" 
-                disabled={isLoading || !input.trim()}
+                disabled={!canSubmit}
                 className="premium-button px-4"
                 loading={isLoading}
               >

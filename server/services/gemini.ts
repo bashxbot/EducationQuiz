@@ -74,27 +74,45 @@ Make questions educational, accurate, and age-appropriate. Use LaTeX syntax for 
   }
 }
 
-export async function generateChat(message: string) {
+export async function generateChat(message: string, imageData?: { base64: string; mimeType: string }) {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `You are a helpful educational AI assistant for students. Answer this question clearly and educationally, using proper formatting including:
+    let prompt = `You are a helpful educational AI assistant for students. Answer this question clearly and educationally, using proper formatting including:
 - **Bold text** for emphasis
 - *Italic text* for definitions
 - LaTeX syntax for math (e.g., $x^2$, $\\frac{a}{b}$, $\\sqrt{x}$)
 - Code blocks for programming concepts
 - Lists for step-by-step explanations
 
-Keep responses concise but informative. Always be encouraging and supportive.
+Keep responses concise but informative. Always be encouraging and supportive.`;
 
-Question: ${message}`;
+    if (imageData) {
+      prompt += `\n\nThe user has uploaded an image. Please analyze the image and answer their question about it. If they haven't asked a specific question, provide a detailed educational explanation of what you see in the image.`;
+    }
 
-    const result = await model.generateContent(prompt);
+    prompt += `\n\nQuestion: ${message}`;
+
+    let parts: any[] = [{ text: prompt }];
+    
+    if (imageData) {
+      parts.push({
+        inlineData: {
+          data: imageData.base64,
+          mimeType: imageData.mimeType
+        }
+      });
+    }
+
+    const result = await model.generateContent(parts);
     const response = await result.response;
     return response.text();
   } catch (error) {
     console.error('Gemini chat error:', error);
     // Fallback response
+    if (imageData) {
+      return `I can see you've uploaded an image, but I'm having trouble analyzing it right now. Please try again or describe what you'd like to know about the image.`;
+    }
     return `That's a great question! Let me help you understand this concept better. For detailed help with "${message}", I recommend discussing this with your teacher or tutor for personalized guidance.`;
   }
 }
