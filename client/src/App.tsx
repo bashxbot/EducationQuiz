@@ -50,9 +50,9 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="eduapp-theme">
-        <AchievementProvider>
-          <TooltipProvider>
+      <TooltipProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="eduapp-theme">
+          <AchievementProvider>
             {profile?.isAuthenticated ? (
               <div className="flex flex-col min-h-screen max-w-md mx-auto relative overflow-hidden">
                 {/* App background with noise texture */}
@@ -79,9 +79,9 @@ function App() {
             ) : (
               <Welcome />
             )}
-          </TooltipProvider>
-        </AchievementProvider>
-      </ThemeProvider>
+          </AchievementProvider>
+        </ThemeProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

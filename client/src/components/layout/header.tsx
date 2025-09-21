@@ -9,26 +9,8 @@ export function Header() {
   const { profile, updateProfile } = useUserProfile();
 
   const handleLogin = () => {
-    // Reset profile to show welcome page
-    const defaultProfile = {
-      id: "",
-      name: "",
-      email: "",
-      phone: "",
-      class: "",
-      school: "",
-      profilePicture: "",
-      totalPoints: 0,
-      currentStreak: 0,
-      joinDate: new Date().toISOString(),
-      isAuthenticated: false,
-    };
-    
-    updateProfile(defaultProfile);
-    // Clear localStorage
-    localStorage.removeItem('eduapp-user-profile');
-    // Redirect to welcome page
-    window.location.href = '/';
+    // This will trigger showing the welcome page with login form
+    window.location.href = '/?login=true';
   };
 
   return (

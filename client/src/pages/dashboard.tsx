@@ -7,15 +7,16 @@ import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const { profile } = useUserProfile();
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const { data: user } = useQuery({
     queryKey: ["/api/user"],
   });
 
-  // Listen for profile updates
+  // Use profile from useUserProfile hook as primary source
   useEffect(() => {
-    setCurrentUser(user);
+    setCurrentUser(profile?.isAuthenticated ? profile : user);
 
     const handleProfileUpdate = (event: CustomEvent) => {
       const updatedProfile = event.detail;
@@ -24,7 +25,7 @@ export default function Dashboard() {
 
     window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
     return () => window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
-  }, [user]);
+  }, [profile, user]);
 
   const { data: progress } = useQuery({
     queryKey: ["/api/progress"],

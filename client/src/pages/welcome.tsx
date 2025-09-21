@@ -592,7 +592,7 @@ export default function Welcome() {
     try {
       for (let i = 0; i < stages.length; i++) {
         setLoadingStage(i);
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       // Check stored credentials with password validation
@@ -613,29 +613,12 @@ export default function Welcome() {
           joinDate: user.joinDate || new Date().toISOString()
         });
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
         setLocation('/dashboard');
       } else {
-        // For demo purposes, allow login with demo credentials
-        if (loginData.email === 'demo@student.com' && loginData.password === 'password123') {
-          loginUser({
-            id: 'demo-user',
-            name: 'Demo Student',
-            email: 'demo@student.com',
-            phone: '+1234567890',
-            class: '10',
-            school: 'Demo High School',
-            totalPoints: 1250,
-            currentStreak: 7,
-            joinDate: new Date().toISOString()
-          });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setLocation('/dashboard');
-        } else {
-          setLoginErrors({ general: 'Invalid credentials. Please check your email and password.' });
-          setIsLoading(false);
-          setCurrentSection('login');
-        }
+        setLoginErrors({ general: 'Invalid credentials. Please check your email and password.' });
+        setIsLoading(false);
+        setCurrentSection('login');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -1053,11 +1036,20 @@ export default function Welcome() {
     }
   };
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to dashboard and handle logout
   useEffect(() => {
     if (profile?.isAuthenticated) {
       setLocation('/dashboard');
     }
+
+    // Listen for logout events
+    const handleLogout = () => {
+      setCurrentSection('landing');
+      setIsLoading(false);
+    };
+
+    window.addEventListener('userLoggedOut', handleLogout);
+    return () => window.removeEventListener('userLoggedOut', handleLogout);
   }, [profile?.isAuthenticated, setLocation]);
 
   if (profile?.isAuthenticated) {

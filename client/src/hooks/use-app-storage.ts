@@ -219,17 +219,24 @@ export function useUserProfile() {
       isAuthenticated: false,
     };
     
-    setProfile(defaultProfile);
-    
-    // Clear all stored data
+    // Clear all stored data first
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
     localStorage.removeItem('chat_messages');
     localStorage.removeItem('quiz_progress');
-    localStorage.removeItem(STORAGE_KEYS.CHAT_HISTORY);
-    localStorage.removeItem(STORAGE_KEYS.QUIZ_PROGRESS);
-    localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+    localStorage.removeItem('registeredUsers');
     
-    // Force redirect to welcome page
-    window.location.href = '/';
+    // Set profile to default
+    setProfile(defaultProfile);
+    
+    // Trigger a custom event to notify other components
+    window.dispatchEvent(new CustomEvent('userLoggedOut'));
+    
+    // Use setTimeout to ensure state updates are processed
+    setTimeout(() => {
+      window.location.replace('/');
+    }, 100);
   };
 
 
