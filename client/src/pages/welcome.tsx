@@ -170,9 +170,9 @@ const GeometricLoader = () => (
 // Advanced Typing Effect Component
 const AdvancedTypingText = ({ 
   texts, 
-  speed = 100, 
-  deleteSpeed = 50, 
-  pauseDuration = 2000,
+  speed = 150, 
+  deleteSpeed = 75, 
+  pauseDuration = 3000,
   className = ""
 }: { 
   texts: string[]; 
@@ -457,7 +457,7 @@ const classes = [
 
 export default function Welcome() {
   const { profile, updateProfile } = useUserProfile();
-  const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'loading'>('landing');
+  const [currentSection, setCurrentSection] = useState<'landing' | 'about' | 'features' | 'signup' | 'login' | 'loading'>('landing');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [formData, setFormData] = useState({
@@ -467,9 +467,14 @@ export default function Welcome() {
     class: '',
     school: ''
   });
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
   const [schoolSuggestions, setSchoolSuggestions] = useState<string[]>([]);
   const [showSchoolSuggestions, setShowSchoolSuggestions] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -640,6 +645,19 @@ export default function Welcome() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      // Store user data (in a real app, this would be saved to backend)
+      localStorage.setItem('registeredUsers', JSON.stringify([
+        ...(JSON.parse(localStorage.getItem('registeredUsers') || '[]')),
+        {
+          email: formData.email,
+          password: 'defaultpass123', // In real app, this would be hashed
+          name: formData.name,
+          phone: formData.phone,
+          class: formData.class,
+          school: formData.school
+        }
+      ]));
+
       updateProfile({
         id: 'user-' + Date.now(),
         name: formData.name,
@@ -722,6 +740,35 @@ export default function Welcome() {
     return !newErrors[field];
   };
 
+  const validateLoginField = (field: string, value: string) => {
+    const newErrors = { ...loginErrors };
+
+    switch (field) {
+      case 'email':
+        if (!value.trim()) {
+          newErrors.email = 'Email is required';
+        } else if (!isValidEmail(value)) {
+          newErrors.email = 'Please enter a valid email address';
+        } else {
+          delete newErrors.email;
+        }
+        break;
+
+      case 'password':
+        if (!value.trim()) {
+          newErrors.password = 'Password is required';
+        } else if (value.length < 6) {
+          newErrors.password = 'Password must be at least 6 characters';
+        } else {
+          delete newErrors.password;
+        }
+        break;
+    }
+
+    setLoginErrors(newErrors);
+    return !newErrors[field];
+  };
+
   const handleInputChange = async (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     validateField(field, value);
@@ -743,6 +790,11 @@ export default function Welcome() {
     validateField('school', school);
   };
 
+  const handleLoginInputChange = (field: string, value: string) => {
+    setLoginData(prev => ({ ...prev, [field]: value }));
+    validateLoginField(field, value);
+  };
+
   const canProceed = () => {
     return formData.name.trim() && 
            formData.email.trim() && 
@@ -752,13 +804,208 @@ export default function Welcome() {
            Object.keys(errors).length === 0;
   };
 
+  const canLogin = () => {
+    return loginData.email.trim() && 
+           loginData.password.trim() &&
+           Object.keys(loginErrors).length === 0;
+  };
+
+  const handleLogin = async () => {
+    if (!canLogin()) return;
+
+    setIsLoading(true);
+    setCurrentSection('loading');
+
+    // Simulate login process
+    const stages = [
+      'Verifying credentials...',
+      'Loading your profile...',
+      'Preparing your dashboard...',
+      'Almost ready...'
+    ];
+
+    for (let i = 0; i < stages.length; i++) {
+      setLoadingStage(i);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    try {
+      // Here you would normally verify credentials against stored user data
+      // For demo purposes, we'll simulate successful login
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      updateProfile({
+        id: 'user-' + Date.now(),
+        name: 'Returning User',
+        email: loginData.email,
+        phone: '+1234567890',
+        class: 'Class 10',
+        school: 'Excellence High School',
+        totalPoints: 1250,
+        currentStreak: 5,
+        joinDate: new Date().toISOString(),
+        isAuthenticated: true
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginErrors({ general: 'Login failed. Please check your credentials.' });
+      setCurrentSection('login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (profile?.isAuthenticated) {
     return null;
   }
 
+  // Login Section
+  if (currentSection === 'login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background-secondary to-background p-4 relative overflow-hidden">
+        <ParticleField />
+        
+        <div className="relative z-10 max-w-md mx-auto py-8">
+          <Card className="premium-card">
+            <CardHeader className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-2xl flex items-center justify-center">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-3xl text-gradient-primary">Welcome Back</CardTitle>
+                <p className="text-muted-foreground mt-2">
+                  Login to continue your learning journey
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {loginErrors.general && (
+                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                  <AlertTriangle className="h-4 w-4" />
+                  {loginErrors.general}
+                </div>
+              )}
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  placeholder="your.email@school.edu"
+                  value={loginData.email}
+                  onChange={(e) => handleLoginInputChange('email', e.target.value)}
+                  className={`premium-input ${loginErrors.email ? 'border-destructive' : ''}`}
+                />
+                {loginErrors.email && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {loginErrors.email}
+                  </div>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={loginData.password}
+                  onChange={(e) => handleLoginInputChange('password', e.target.value)}
+                  className={`premium-input ${loginErrors.password ? 'border-destructive' : ''}`}
+                />
+                {loginErrors.password && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {loginErrors.password}
+                  </div>
+                )}
+              </div>
+
+              {/* Login Button */}
+              <div className="space-y-4">
+                <Button
+                  onClick={handleLogin}
+                  disabled={!canLogin() || isLoading}
+                  className="w-full premium-button h-14 text-lg"
+                  variant="premium"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-3">
+                      <LoadingSpinner />
+                      Logging in...
+                    </div>
+                  ) : (
+                    <>
+                      Login to Dashboard
+                      <ArrowRight className="h-5 w-5 ml-2" />
+                    </>
+                  )}
+                </Button>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentSection('signup')}
+                    className="flex-1 h-12"
+                    disabled={isLoading}
+                  >
+                    Create Account
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentSection('landing')}
+                    className="flex-1 h-12"
+                    disabled={isLoading}
+                  >
+                    Back to Home
+                  </Button>
+                </div>
+              </div>
+
+              {/* Demo Credentials */}
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 border border-primary/20">
+                <h3 className="font-medium text-primary mb-2 flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4" />
+                  Demo Account:
+                </h3>
+                <div className="text-sm space-y-1">
+                  <p><strong>Email:</strong> demo@student.com</p>
+                  <p><strong>Password:</strong> password123</p>
+                </div>
+              </div>
+
+              {/* Terms and Privacy */}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  By logging in, you agree to our{' '}
+                  <span className="text-primary underline cursor-pointer hover:text-primary/80">Terms of Service</span>
+                  {' '}and{' '}
+                  <span className="text-primary underline cursor-pointer hover:text-primary/80">Privacy Policy</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Loading Screen
   if (currentSection === 'loading') {
-    const loadingStages = [
+    const loadingStages = currentSection === 'login' ? [
+      'Verifying credentials...',
+      'Loading your profile...',
+      'Preparing your dashboard...',
+      'Almost ready...'
+    ] : [
       'Initializing AI Engine...',
       'Loading Learning Algorithms...',
       'Preparing Personalized Content...',
@@ -887,6 +1134,17 @@ export default function Welcome() {
                 >
                   Start Learning Now
                   <Rocket className="h-5 w-5 ml-2" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-center">
+                <Button 
+                  onClick={() => setCurrentSection('login')} 
+                  variant="outline"
+                  className="h-12 px-6"
+                >
+                  Already have an account? Login
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
 
@@ -1492,11 +1750,11 @@ export default function Welcome() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => setCurrentSection('features')}
+                    onClick={() => setCurrentSection('login')}
                     className="flex-1 h-12"
                     disabled={isLoading}
                   >
-                    Learn More
+                    Login Instead
                   </Button>
                   <Button
                     variant="outline"

@@ -1,10 +1,21 @@
 
 import { useTheme } from "@/lib/theme";
-import { Moon, Sun, GraduationCap, Sparkles } from "lucide-react";
+import { Moon, Sun, GraduationCap, Sparkles, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUserProfile } from "@/hooks/use-app-storage";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
+  const { profile, updateProfile } = useUserProfile();
+
+  const handleLogin = () => {
+    // Reset profile to show welcome page
+    updateProfile({
+      isAuthenticated: false
+    });
+    // Reload to show welcome page
+    window.location.reload();
+  };
 
   return (
     <header className="sticky top-0 z-50 premium-nav border-b border-border/50 animate-slide-down">
@@ -32,6 +43,18 @@ export function Header() {
           <div className="status-indicator status-online">
             <div className="w-3 h-3 bg-success rounded-full"></div>
           </div>
+          
+          {!profile?.isAuthenticated && (
+            <Button
+              onClick={handleLogin}
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 text-xs border border-border/50 hover:border-border"
+            >
+              <LogIn className="h-3 w-3 mr-1" />
+              Login
+            </Button>
+          )}
           
           <Button
             variant="ghost"
